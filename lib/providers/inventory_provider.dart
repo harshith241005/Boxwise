@@ -879,4 +879,10 @@ class InventoryProvider extends ChangeNotifier {
     // ignore: deprecated_member_use
     await Share.shareXFiles([XFile(file.path)], text: 'QR Label for ${box.name}');
   }
+
+  Future<void> resetAllData() async {
+    await DatabaseService.resetAllData();
+    await loadBoxes();
+    notifyListeners();
+  }
 }

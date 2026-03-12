@@ -265,4 +265,14 @@ class DatabaseService {
     final strValue = jsonEncode(value);
     await db.insert('settings', {'key': key, 'value': strValue}, conflictAlgorithm: ConflictAlgorithm.replace);
   }
+
+  static Future<void> resetAllData() async {
+    await db.delete('items');
+    await db.delete('boxes');
+    await db.delete('tags');
+    await db.delete('item_tags');
+    await db.delete('scan_history');
+    await db.delete('activity_logs');
+    await db.delete('settings');
+  }
 }
