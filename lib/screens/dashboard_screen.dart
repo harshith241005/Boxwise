@@ -5,13 +5,19 @@ import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
 import 'create_box_screen.dart';
 import 'box_details_screen.dart';
+import 'stats_screen.dart';
 import 'qr_scanner_screen.dart';
 import 'search_screen.dart';
+import 'ai_vision_screen.dart';
+import 'activity_screen.dart';
 import 'boxes_screen.dart';
 import 'settings_screen.dart';
 import 'add_item_screen.dart';
 import 'qr_code_screen.dart';
 import 'qr_sheet_screen.dart';
+import 'shopping_list_screen.dart';
+import 'collaborators_screen.dart';
+import 'profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -107,11 +113,11 @@ class _DashboardScreenState extends State<DashboardScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _quickActionBtn(context, Icons.inventory_2_rounded, 'Add Box', AppTheme.primaryColor, () {
+                   _quickActionBtn(context, Icons.inventory_2_rounded, 'Add Box', AppTheme.primaryColor, () {
                     Navigator.pop(ctx);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
                   }),
-                  _quickActionBtn(context, Icons.add_circle_outline_rounded, 'Add Item', Colors.indigo, () {
+                  _quickActionBtn(context, Icons.checklist_rounded, 'Add Item', Colors.indigo, () {
                     Navigator.pop(ctx);
                     final provider = context.read<InventoryProvider>();
                     _showAddItemListDialog(context, provider);
@@ -119,6 +125,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                   _quickActionBtn(context, Icons.qr_code_scanner_rounded, 'Scan QR', AppTheme.accentColor, () {
                     Navigator.pop(ctx);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen()));
+                  }),
+                  _quickActionBtn(context, Icons.psychology_outlined, 'AI Vision', Colors.indigo, () {
+                    Navigator.pop(ctx);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AiVisionScreen()));
                   }),
                   _quickActionBtn(context, Icons.import_export_rounded, 'Import Data', AppTheme.warningColor, () async {
                     Navigator.pop(ctx);
@@ -197,7 +207,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
               NavigationDestination(
                 icon: Container(
-                  padding: const EdgeInsets.all(6), // Slightly smaller
+                  padding: const EdgeInsets.all(6), 
                   decoration: BoxDecoration(
                     color: AppTheme.primaryColor,
                     borderRadius: BorderRadius.circular(10),
@@ -221,60 +231,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // This method is no longer used with NavigationBar
-  Widget _navItem(IconData icon, String label, int index) {
-    final isSelected = _currentIndex == index;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: () {
-        if (index == 2) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const QrScannerScreen()),
-          );
-        } else {
-          setState(() => _currentIndex = index);
-        }
-      },
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.primaryColor.withAlpha(26)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected
-                  ? AppTheme.primaryColor
-                  : (isDark
-                      ? Colors.white.withAlpha(102)
-                      : Colors.black.withAlpha(102)),
-              size: 24,
-            ),
-            if (isSelected) ...[
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
   void _showExportDialog(BuildContext context, InventoryProvider provider) {
     showDialog(
       context: context,
@@ -381,6 +337,104 @@ class _HomeTab extends StatelessWidget {
     );
   }
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
+  Widget _buildAlertCard(BuildContext context, String title, String subtitle, IconData icon, Color color, VoidCallback onTap) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 220,
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withAlpha(20),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withAlpha(50)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withAlpha(30),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+                  Text(subtitle, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, overflow: TextOverflow.ellipsis)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationMapping(BuildContext context, InventoryProvider provider) {
+    final heatmap = provider.locationHeatmap;
+    final locations = provider.allLocations;
+    if (locations.isEmpty) return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader(
+          context, 
+          'Rooms & Locations',
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
+          ),
+          child: ListView.separated(
+            shrinkWrap: true,
+            primary: false,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: locations.length,
+            separatorBuilder: (_, __) => Divider(height: 1, indent: 56, color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(5)),
+            itemBuilder: (context, index) {
+              final loc = locations[index];
+              final boxCount = provider.boxes.where((b) => (b.location ?? '').trim() == loc).length;
+              final itemCount = heatmap[loc] ?? 0;
+              return ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: AppTheme.primaryColor.withAlpha(20), borderRadius: BorderRadius.circular(12)),
+                  child: const Icon(Icons.room_rounded, color: AppTheme.primaryColor, size: 20),
+                ),
+                title: Text(loc, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                subtitle: Text('$boxCount boxes • $itemCount items', style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54)),
+                trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const BoxesScreen()));
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<InventoryProvider>(
@@ -390,28 +444,65 @@ class _HomeTab extends StatelessWidget {
         return CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            // 1️⃣ App Header
             SliverAppBar(
               floating: true,
               snap: true,
               toolbarHeight: 70,
-              title: const Text('Boxwise', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
-              actions: const [],
+              title: const Text('Boxvise', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+                    icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                    label: const Text('Profile'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.primaryColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
-            // Content
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _getGreeting(),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white54 : Colors.black54,
+                      ),
+                    ),
+                    const Text(
+                      'Welcome Home',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 2️⃣ Quick Global Search Bar
                     GestureDetector(
                       onTap: () {
                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
                       },
-                                            child: Container(
+                      child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                         decoration: BoxDecoration(
                           color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -434,25 +525,69 @@ class _HomeTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
 
-                    // 3️⃣ Statistics Cards Section
+                    _sectionHeader(
+                      context, 
+                      'Inventory Overview', 
+                      trailing: 'View More',
+                      onTrailingTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsScreen())),
+                    ),
+                    const SizedBox(height: 12),
                     SizedBox(
-                      height: 150, // More headroom for padding and fonts
+                      height: 150,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
                         clipBehavior: Clip.none,
                         children: [
+                          _buildHorizontalStatCard(context, 'Total Quantity', '${provider.totalQuantity}', Icons.stacked_bar_chart_rounded, Colors.green),
+                          const SizedBox(width: 12),
+                          _buildHorizontalStatCard(context, 'Space Index', '${(provider.totalSpaceUsage * 100).toInt()}%', Icons.donut_large_rounded, Colors.orange),
+                          const SizedBox(width: 12),
                           _buildHorizontalStatCard(context, 'Boxes', '${provider.totalBoxes}', Icons.inventory_2_rounded, AppTheme.primaryColor),
                           const SizedBox(width: 12),
                           _buildHorizontalStatCard(context, 'Items', '${provider.totalItems}', Icons.category_rounded, AppTheme.accentColor),
-                          const SizedBox(width: 12),
-                          _buildHorizontalStatCard(context, 'Low Stock', '${provider.lowStockItems.length}', Icons.warning_amber_rounded, AppTheme.errorColor),
                         ],
                       ),
                     ),
+                    const SizedBox(height: 24),
+
+                    _buildCategoryCloud(context, provider),
+                    const SizedBox(height: 12),
+
+                    if (provider.expiringItems.isNotEmpty || provider.lowStockItems.isNotEmpty) ...[
+                      _sectionHeader(context, 'Attention Required'),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 100,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          children: [
+                            ...provider.expiringItems.map((e) => _buildAlertCard(
+                                  context,
+                                  'Expiring Soon',
+                                  '${e['item'].name} (${e['days']}d)',
+                                  Icons.timer_rounded,
+                                  Colors.redAccent,
+                                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: e['box']))),
+                                )),
+                            ...provider.lowStockItems.map((s) => _buildAlertCard(
+                                  context,
+                                  'Low Stock',
+                                  '${s['item'].name} in ${s['box'].name}',
+                                  Icons.warning_amber_rounded,
+                                  Colors.orangeAccent,
+                                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingListScreen())),
+                                )),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+
+                    _buildLocationMapping(context, provider),
                     const SizedBox(height: 32),
 
-                    // 4️⃣ Quick Hub
                     const Text('Quick Hub', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
                     const SizedBox(height: 16),
                     GridView.count(
@@ -461,32 +596,39 @@ class _HomeTab extends StatelessWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
-                      childAspectRatio: 2.3, // Slightly taller to prevent text cut-off
+                      childAspectRatio: 2.3,
                       children: [
-                        _buildactionTile(context, '+ Create Box', Icons.add_box_rounded, AppTheme.primaryColor, () {
+                        _buildactionTile(context, 'Create Box', Icons.inventory_2_rounded, AppTheme.primaryColor, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
                         }),
-                        _buildactionTile(context, '+ Add Item', Icons.add_circle_outline_rounded, AppTheme.accentColor, () {
+                        _buildactionTile(context, 'Add Item', Icons.checklist_rounded, AppTheme.accentColor, () {
                           _showAddItemListDialog(context, provider);
                         }),
-                        _buildactionTile(context, '📷 Scan QR', Icons.qr_code_scanner_rounded, Colors.teal, () {
+                        _buildactionTile(context, 'Scan QR', Icons.qr_code_scanner_rounded, Colors.teal, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen()));
                         }),
-                        _buildactionTile(context, '🔳 Generate QR', Icons.qr_code_2_rounded, Colors.deepOrange, () {
+                        _buildactionTile(context, 'Generate QR', Icons.qr_code_2_rounded, Colors.deepOrange, () {
                           _showGeneratedQRs(context, provider);
                         }),
                         _buildactionTile(context, 'View All QRs', Icons.grid_view_rounded, Colors.purple, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const QrSheetScreen()));
                         }),
+                        _buildactionTile(context, 'Shop List', Icons.shopping_cart_rounded, Colors.orange, () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingListScreen()));
+                        }),
+                        _buildactionTile(context, 'Family', Icons.group_rounded, Colors.indigo, () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CollaboratorsScreen()));
+                        }),
+                        _buildactionTile(context, 'Analyze AI', Icons.psychology_rounded, Colors.pink, () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const AiVisionScreen()));
+                        }),
                       ],
                     ),
                     const SizedBox(height: 24),
 
-                    // 5️⃣ Recent Activity Section
                     _activityTimeline(context, provider),
                     const SizedBox(height: 24),
 
-                    // All Boxes Section Header
                     _sectionHeader(context, 'Box Overview', trailing: '${provider.totalBoxes} boxes'),
                     const SizedBox(height: 12),
                   ],
@@ -494,7 +636,6 @@ class _HomeTab extends StatelessWidget {
               ),
             ),
 
-            // Boxes Grid or Empty State
             if (provider.boxes.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
@@ -521,30 +662,33 @@ class _HomeTab extends StatelessWidget {
                 sliver: SliverGrid(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 0.75, // Adjusted to prevent overflows
+                    childAspectRatio: 0.75,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final box = provider.boxes[index];
-                      return BoxCard(
-                        name: box.name?.toString() ?? 'Unnamed Box',
-                        location: box.location?.toString() ?? 'Unknown',
-                        itemCount: box.items.length,
-                        capacity: box.capacity ?? 0,
-                        color: Color(box.colorValue ?? AppTheme.primaryColor.value),
-                        isSelected: provider.selectedBoxIds.contains(box.id),
-                        onTap: () {
-                          if (provider.isMultiSelectMode) {
-                            provider.toggleBoxSelection(box.id);
-                          } else {
-                            provider.accessBox(box);
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: box)));
-                          }
-                        },
-                        onQrTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => QrCodeScreen(box: box))),
-                        onLongPress: () => provider.toggleBoxSelection(box.id),
+                      return Hero(
+                        tag: 'box_${box.id}',
+                        child: BoxCard(
+                          name: box.name?.toString() ?? 'Unnamed Box',
+                          location: box.location?.toString() ?? 'Unknown',
+                          itemCount: box.items.length,
+                          capacity: box.capacity ?? 0,
+                          color: Color(box.colorValue ?? AppTheme.primaryColor.value),
+                          isSelected: provider.selectedBoxIds.contains(box.id),
+                          onTap: () {
+                            if (provider.isMultiSelectMode) {
+                              provider.toggleBoxSelection(box.id);
+                            } else {
+                              provider.accessBox(box);
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: box)));
+                            }
+                          },
+                          onQrTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => QrCodeScreen(box: box))),
+                          onLongPress: () => provider.toggleBoxSelection(box.id),
+                        ),
                       );
                     },
                     childCount: provider.boxes.length,
@@ -565,7 +709,7 @@ class _HomeTab extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: Container(
-        width: 170, // Slightly wider
+        width: 170,
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -617,7 +761,6 @@ class _HomeTab extends StatelessWidget {
   Widget _buildactionTile(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
@@ -660,9 +803,7 @@ class _HomeTab extends StatelessWidget {
     );
   }
 
-
-
-  Widget _sectionHeader(BuildContext context, String title, {String? trailing}) {
+  Widget _sectionHeader(BuildContext context, String title, {String? trailing, VoidCallback? onTrailingTap}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Row(
@@ -670,7 +811,17 @@ class _HomeTab extends StatelessWidget {
       children: [
         Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
         if (trailing != null)
-          Text(trailing, style: TextStyle(fontSize: 13, color: isDark ? Colors.white.withAlpha(102) : Colors.black.withAlpha(102), fontWeight: FontWeight.w500)),
+          GestureDetector(
+            onTap: onTrailingTap,
+            child: Text(
+              trailing, 
+              style: TextStyle(
+                fontSize: 13, 
+                color: AppTheme.primaryColor, 
+                fontWeight: FontWeight.w600
+              )
+            ),
+          ),
       ],
     );
   }
@@ -681,11 +832,16 @@ class _HomeTab extends StatelessWidget {
     
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-        return Column(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Recent Activity', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-        const SizedBox(height: 16),
+        _sectionHeader(
+          context, 
+          'Recent Activity', 
+          trailing: 'View All',
+          onTrailingTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen())),
+        ),
+        const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -788,6 +944,87 @@ class _HomeTab extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCategoryCloud(BuildContext context, InventoryProvider provider) {
+    final categories = provider.topCategories;
+    if (categories.isEmpty) return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final maxValue = categories.first.value == 0 ? 1 : categories.first.value;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader(context, 'Top Categories'),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
+          ),
+          child: Column(
+            children: categories.asMap().entries.map((entry) {
+              final cat = entry.value;
+              final index = entry.key;
+              final colors = [Colors.blue, Colors.purple, Colors.orange, Colors.teal];
+              final color = colors[index % colors.length];
+              final percentage = (cat.value / maxValue).clamp(0.0, 1.0);
+              final isLast = index == categories.length - 1;
+              
+              return GestureDetector(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BoxesScreen())),
+                child: Container(
+                  margin: EdgeInsets.only(bottom: isLast ? 0 : 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: color.withAlpha(18),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: color.withAlpha(30)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(color: color.withAlpha(36), shape: BoxShape.circle),
+                            child: Center(
+                              child: Text('${index + 1}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: color)),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(cat.key, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: color)),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(color: color.withAlpha(40), borderRadius: BorderRadius.circular(8)),
+                            child: Text('${cat.value}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: color)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: percentage,
+                          minHeight: 6,
+                          color: color,
+                          backgroundColor: color.withAlpha(28),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
     );
   }
 }

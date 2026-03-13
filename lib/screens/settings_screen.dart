@@ -82,6 +82,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     _buildDivider(),
                     _buildLanguageTile(provider),
+                    _buildDivider(),
+                    _buildThemeColorTile(context, provider),
                   ]),
 
                   // Security Section
@@ -138,10 +140,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSectionCard([
                     _buildSettingTile(
                       title: 'Share the App',
-                      subtitle: 'Recommend Boxwise to friends',
+                      subtitle: 'Recommend Boxvise to friends',
                       icon: Icons.share_rounded,
                       iconColor: AppTheme.primaryColor,
-                      onTap: () => Share.share('Check out Boxwise - The smartest inventory manager! https://github.com/harshith241005/Boxwise'),
+                      onTap: () => Share.share('Check out Boxvise - The smartest inventory manager! https://github.com/harshith241005/Boxwise'),
                     ),
                     _buildDivider(),
                     _buildSettingTile(
@@ -159,23 +161,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       iconColor: Colors.teal,
                       onTap: () => _launchUrl('mailto:support@boxwise.app'),
                     ),
-                  ]),
-
-                  // Roadmap Section
-                  _buildSectionHeader('ROADMAP'),
-                  _buildSectionCard([
-                    _buildComingSoonTile(
-                      title: 'Cloud Sync',
-                      subtitle: 'Access across all your devices',
-                      icon: Icons.cloud_sync_rounded,
-                      status: 'Q3 2024',
+                    _buildDivider(),
+                    _buildSettingTile(
+                      title: 'Privacy Policy',
+                      subtitle: 'How your data is stored and secured',
+                      icon: Icons.privacy_tip_rounded,
+                      iconColor: Colors.green,
+                      onTap: () => _launchUrl('https://github.com/harshith241005/Boxwise'),
                     ),
                     _buildDivider(),
-                    _buildComingSoonTile(
-                      title: 'Team Access',
-                      subtitle: 'Collaborate with teammates',
-                      icon: Icons.people_alt_rounded,
-                      status: 'Dev Phase',
+                    _buildSettingTile(
+                      title: 'Terms of Use',
+                      subtitle: 'Usage rules and limitations',
+                      icon: Icons.gavel_rounded,
+                      iconColor: Colors.indigo,
+                      onTap: () => _launchUrl('https://github.com/harshith241005/Boxwise'),
+                    ),
+                    _buildDivider(),
+                    _buildSettingTile(
+                      title: 'Send Feedback',
+                      subtitle: 'Tell us what to improve in Boxvise',
+                      icon: Icons.feedback_rounded,
+                      iconColor: Colors.orange,
+                      onTap: () => _launchUrl('mailto:feedback@boxwise.app?subject=Boxvise%20Feedback'),
                     ),
                   ]),
 
@@ -192,30 +200,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ]),
 
-                  const SizedBox(height: 48),
-                  
-                  // App Footer
+                  const SizedBox(height: 28),
                   Center(
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withAlpha(20) : Colors.black.withAlpha(10),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Icon(Icons.inventory_2_rounded, color: AppTheme.primaryColor, size: 40),
-                        ),
-                        const SizedBox(height: 16),
-                        Text('Boxwise', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 0)),
-                        const SizedBox(height: 4),
-                        Text('Version $_version ($_buildNumber)', style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38)),
-                        const SizedBox(height: 24),
-                        Text('Built with ❤️ for better organization', style: TextStyle(fontSize: 11, color: isDark ? Colors.white24 : Colors.black26)),
-                      ],
-                    ),
+                    child: Text('Boxvise v$_version ($_buildNumber)', style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38)),
                   ),
-                  const SizedBox(height: 64),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -398,7 +387,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.alpha153),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -588,4 +577,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await launchUrl(uri);
     }
   }
+  Widget _buildThemeColorTile(BuildContext context, InventoryProvider provider) {
+    return _buildSettingTile(
+      title: 'Theme Color',
+      subtitle: 'Personalize the app with your color',
+      icon: Icons.palette_rounded,
+      iconColor: provider.primaryColor,
+      onTap: () => _showThemeColorPicker(context, provider),
+    );
+  }
+
+  void _showThemeColorPicker(BuildContext context, InventoryProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Choose Theme Color', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            const Text('Refresh the appearance across the entire app.', style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 120,
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 6,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                ),
+                itemCount: AppTheme.boxColors.length,
+                itemBuilder: (context, index) {
+                  final color = AppTheme.boxColors[index];
+                  final isSelected = provider.primaryColor.value == color.value;
+                  return GestureDetector(
+                    onTap: () {
+                      provider.setPrimaryColor(color);
+                      Navigator.pop(ctx);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: isSelected ? Border.all(color: Colors.white, width: 3) : null,
+                        boxShadow: isSelected ? [BoxShadow(color: color.withAlpha(102), blurRadius: 10, spreadRadius: 2)] : [],
+                      ),
+                      child: isSelected ? const Icon(Icons.check_rounded, color: Colors.white, size: 20) : null,
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
 }
+

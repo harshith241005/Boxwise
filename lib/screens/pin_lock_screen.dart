@@ -52,7 +52,7 @@ class _PinLockScreenState extends State<PinLockScreen>
   Future<void> _authenticateWithBiometrics() async {
     try {
       final authenticated = await _localAuth.authenticate(
-        localizedReason: 'Unlock your Boxwise inventory',
+        localizedReason: 'Unlock your Boxvise inventory',
         options: const AuthenticationOptions(
           stickyAuth: true,
           biometricOnly: true,

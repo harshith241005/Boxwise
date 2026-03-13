@@ -102,7 +102,7 @@ class _SearchScreenState extends State<SearchScreen> {
       slivers: [
         SliverAppBar(
           floating: true, snap: true,
-          title: const Text('Search & Filter', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+          title: const Text('Search', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
           actions: [
             IconButton(
               icon: Icon(Icons.filter_list_rounded, color: (_lowStockOnly || _showTemplatesOnly) ? AppTheme.primaryColor : null),
@@ -115,11 +115,30 @@ class _SearchScreenState extends State<SearchScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           sliver: SliverList(delegate: SliverChildListDelegate([
             const SizedBox(height: 8),
-            SearchBarWidget(
-              controller: _searchCtrl,
-              onChanged: (_) => _performSearch(),
-              onVoiceTap: _listen,
-              isListening: _isListening,
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Find boxes, items, tags, and locations',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? Colors.white54 : Colors.black54),
+                  ),
+                  const SizedBox(height: 10),
+                  SearchBarWidget(
+                    controller: _searchCtrl,
+                    hintText: 'Search by item or box name',
+                    onChanged: (_) => _performSearch(),
+                    onVoiceTap: _listen,
+                    isListening: _isListening,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             

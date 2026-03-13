@@ -78,7 +78,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           ],
         ),
         content: const Text(
-          'This QR does not belong to Boxwise',
+          'This QR does not belong to Boxvise',
         ),
         actions: [
           TextButton(

@@ -16,10 +16,28 @@ class DatabaseService {
 
     _db = await openDatabase(
       path,
-      version: 2,
+      version: 4,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute('ALTER TABLE boxes ADD COLUMN uuid TEXT');
+        }
+        if (oldVersion < 3) {
+          await db.execute('ALTER TABLE items ADD COLUMN price REAL');
+          await db.execute('ALTER TABLE items ADD COLUMN expiryDate TEXT');
+        }
+        if (oldVersion < 4) {
+          await db.execute('''
+            CREATE TABLE lending_logs (
+              id TEXT PRIMARY KEY,
+              item_id TEXT,
+              item_name TEXT,
+              borrower_name TEXT,
+              lend_date TEXT,
+              return_date TEXT,
+              actual_return_date TEXT,
+              status TEXT
+            )
+          ''');
         }
       },
       onCreate: (db, version) async {
@@ -53,6 +71,8 @@ class DatabaseService {
             reminderDate TEXT,
             isTemplate INTEGER,
             imagePath TEXT,
+            price REAL,
+            expiryDate TEXT,
             FOREIGN KEY(box_id) REFERENCES boxes(id) ON DELETE CASCADE
           )
         ''');
@@ -104,6 +124,20 @@ class DatabaseService {
           CREATE TABLE settings (
             key TEXT PRIMARY KEY,
             value TEXT
+          )
+        ''');
+
+        // Lending Logs Table
+        await db.execute('''
+          CREATE TABLE lending_logs (
+            id TEXT PRIMARY KEY,
+            item_id TEXT,
+            item_name TEXT,
+            borrower_name TEXT,
+            lend_date TEXT,
+            return_date TEXT,
+            actual_return_date TEXT,
+            status TEXT
           )
         ''');
       },
@@ -266,6 +300,23 @@ class DatabaseService {
     await db.insert('settings', {'key': key, 'value': strValue}, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  // --- Lending ---
+  static Future<List<Map<String, dynamic>>> getAllLendingLogs() async {
+    return await db.query('lending_logs', orderBy: 'lend_date DESC');
+  }
+
+  static Future<void> addLendingLog(Map<String, dynamic> log) async {
+    await db.insert('lending_logs', log, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  static Future<void> updateLendingLog(String id, Map<String, dynamic> log) async {
+    await db.update('lending_logs', log, where: 'id = ?', whereArgs: [id]);
+  }
+
+  static Future<void> deleteLendingLog(String id) async {
+    await db.delete('lending_logs', where: 'id = ?', whereArgs: [id]);
+  }
+
   static Future<void> resetAllData() async {
     await db.delete('items');
     await db.delete('boxes');
@@ -274,5 +325,6 @@ class DatabaseService {
     await db.delete('scan_history');
     await db.delete('activity_logs');
     await db.delete('settings');
+    await db.delete('lending_logs');
   }
 }

@@ -30,7 +30,11 @@ class _BoxesScreenState extends State<BoxesScreen> {
           return cat == _selectedFilter || loc == _selectedFilter || itemsMatch;
         }).toList();
 
-        final filterOptions = <String>{'All', ...provider.allLocations.take(3), if (provider.totalCategories > 0) ...['Tools', 'Clothing']}.toList();
+        final filterOptions = <String>{
+          'All', 
+          ...provider.allLocations, 
+          ...provider.categoryDistribution.keys
+        }.toList();
 
         return Scaffold(
           body: CustomScrollView(

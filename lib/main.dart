@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'providers/inventory_provider.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'services/database_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/pin_lock_screen.dart';
@@ -19,11 +20,11 @@ void main() async {
   // Initialize Hive database
   await DatabaseService.initialize();
 
-  runApp(const BoxwiseApp());
+  runApp(const BoxviseApp());
 }
 
-class BoxwiseApp extends StatelessWidget {
-  const BoxwiseApp({super.key});
+class BoxviseApp extends StatelessWidget {
+  const BoxviseApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -32,12 +33,14 @@ class BoxwiseApp extends StatelessWidget {
       child: Consumer<InventoryProvider>(
         builder: (context, provider, _) {
           return MaterialApp(
-            title: 'Boxwise - Smart Inventory',
+            title: 'Boxvise - Smart Inventory',
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
+            theme: AppTheme.getLightTheme(provider.primaryColor),
+            darkTheme: AppTheme.getDarkTheme(provider.primaryColor),
             themeMode: provider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-            home: const PinLockScreen(child: DashboardScreen()),
+            home: provider.showOnboarding 
+                ? const OnboardingScreen() 
+                : const PinLockScreen(child: DashboardScreen()),
           );
         },
       ),

@@ -9,6 +9,7 @@ import 'package:pdf/widgets.dart' as pw;
 import '../models/box_model.dart';
 import '../models/item_model.dart';
 import '../models/activity_model.dart';
+import '../models/lending_model.dart';
 import '../services/database_service.dart';
 import '../theme/app_theme.dart';
 
@@ -19,6 +20,8 @@ class InventoryProvider extends ChangeNotifier {
   String _language = 'en';
   bool _usePinLock = false;
   String _appPin = '';
+  Color _primaryColor = AppTheme.primaryColor;
+  bool _showOnboarding = false;
 
   BoxModel? _lastDeletedBox;
   int? _lastDeletedBoxIndex;
@@ -31,10 +34,14 @@ class InventoryProvider extends ChangeNotifier {
 
   final Uuid _uuid = const Uuid();
   List<ActivityModel> _activities = [];
+  List<LendingModel> _lendingLogs = [];
   List<Map<String, dynamic>> _scanHistory = [];
+  List<Map<String, String>> _collaborators = [];
 
   List<ActivityModel> get activities => _activities;
+  List<LendingModel> get lendingLogs => _lendingLogs;
   List<Map<String, dynamic>> get scanHistory => _scanHistory;
+  List<Map<String, String>> get collaborators => _collaborators;
 
   Future<void> _loadActivities() async {
     _activities = await DatabaseService.getActivities();
@@ -64,6 +71,8 @@ class InventoryProvider extends ChangeNotifier {
   bool get isDarkMode => _isDarkMode;
   String get language => _language;
   bool get usePinLock => _usePinLock;
+  Color get primaryColor => _primaryColor;
+  bool get showOnboarding => _showOnboarding;
 
   // Selection
   Set<String> get selectedItemIds => _selectedItemIds;
@@ -99,8 +108,35 @@ class InventoryProvider extends ChangeNotifier {
       _boxes.fold(0, (sum, box) => sum + box.items.length);
   int get totalQuantity =>
       _boxes.fold(0, (sum, box) => sum + box.totalQuantity);
+
+
   int get totalCategories =>
       _boxes.map((b) => b.category?.toString() ?? 'Other').toSet().length;
+
+  double get totalInventoryValue =>
+      _boxes.fold(0.0, (sum, box) => sum + box.items.fold(0.0, (iSum, item) => iSum + ((item.price ?? 0.0) * (item.quantity ?? 1))));
+
+  double get totalSpaceUsage {
+    int totalCap = _boxes.fold(0, (sum, box) => sum + (box.capacity ?? 0));
+    if (totalCap == 0) return 0.0;
+    return totalItems / totalCap;
+  }
+
+  List<Map<String, dynamic>> get expiringItems {
+    final results = <Map<String, dynamic>>[];
+    final now = DateTime.now();
+    for (final box in _boxes) {
+      for (final item in box.items) {
+        if (item.expiryDate != null) {
+          final diff = item.expiryDate!.difference(now).inDays;
+          if (diff <= 7 && diff >= 0) {
+            results.add({'box': box, 'item': item, 'days': diff});
+          }
+        }
+      }
+    }
+    return results;
+  }
 
   List<BoxModel> get recentBoxes {
     final sorted = List<BoxModel>.from(_boxes);
@@ -188,6 +224,10 @@ class InventoryProvider extends ChangeNotifier {
     _language = await DatabaseService.getSetting('language', defaultValue: 'en');
     _usePinLock = await DatabaseService.getSetting('use_pin_lock', defaultValue: false);
     _appPin = await DatabaseService.getSetting('app_pin', defaultValue: '');
+    final colorVal = await DatabaseService.getSetting('primary_color', defaultValue: AppTheme.primaryColor.value);
+    _primaryColor = Color(colorVal);
+
+    _showOnboarding = await DatabaseService.getSetting('show_onboarding', defaultValue: true);
 
     final isFirstLaunch = await DatabaseService.getSetting('is_first_launch', defaultValue: true);
     if (isFirstLaunch) {
@@ -197,6 +237,23 @@ class InventoryProvider extends ChangeNotifier {
 
     await _loadActivities();
     await _loadScanHistory();
+    await _loadLendingLogs();
+    await _loadCollaborators();
+    notifyListeners();
+  }
+
+  Future<void> _loadCollaborators() async {
+    // Mocking collaborators for now (Advanced feature)
+    _collaborators = [
+      {'name': 'Harsh (You)', 'role': 'Admin', 'email': 'harsh@example.com'},
+      {'name': 'Tanvi', 'role': 'Editor', 'email': 'tanvi@example.com'},
+    ];
+  }
+
+  Future<void> inviteCollaborator(String email, String role) async {
+    // In a real app, this would call Firebase
+    _collaborators.add({'name': email.split('@')[0], 'role': role, 'email': email});
+    await logActivity('collab_invited', 'Collaborator Invited', '$email was invited as $role');
     notifyListeners();
   }
 
@@ -385,11 +442,71 @@ class InventoryProvider extends ChangeNotifier {
 
   bool checkPin(String pin) => pin == _appPin;
 
+  void setPrimaryColor(Color color) {
+    _primaryColor = color;
+    DatabaseService.setSetting('primary_color', color.value);
+    notifyListeners();
+  }
+
+  void finishOnboarding() {
+    _showOnboarding = false;
+    DatabaseService.setSetting('show_onboarding', false);
+    notifyListeners();
+  }
+
   // --- Scan History ---
   Future<void> logScan(String boxId, String boxName) async {
     await logActivity('box_scanned', 'Scanned Box', 'Scanned → $boxName', relatedId: boxId);
     await DatabaseService.addScanHistory(boxId, boxName);
     await _loadScanHistory();
+  }
+
+  // --- Lending ---
+  Future<void> _loadLendingLogs() async {
+    final maps = await DatabaseService.getAllLendingLogs();
+    _lendingLogs = maps.map((e) => LendingModel.fromMap(e)).toList();
+    notifyListeners();
+  }
+
+  Future<void> lendItem({
+    required String itemId,
+    required String itemName,
+    required String borrowerName,
+    DateTime? returnDate,
+  }) async {
+    final log = LendingModel(
+      id: _uuid.v4(),
+      itemId: itemId,
+      itemName: itemName,
+      borrowerName: borrowerName,
+      lendDate: DateTime.now(),
+      returnDate: returnDate,
+      status: 'active',
+    );
+    await DatabaseService.addLendingLog(log.toMap());
+    await _loadLendingLogs();
+    await logActivity('item_lent', 'Item Lent', '$itemName was lent to $borrowerName', relatedId: itemId);
+  }
+
+  Future<void> returnItem(LendingModel log) async {
+    final updatedLog = LendingModel(
+      id: log.id,
+      itemId: log.itemId,
+      itemName: log.itemName,
+      borrowerName: log.borrowerName,
+      lendDate: log.lendDate,
+      returnDate: log.returnDate,
+      actualReturnDate: DateTime.now(),
+      status: 'returned',
+    );
+    await DatabaseService.updateLendingLog(log.id, updatedLog.toMap());
+    await _loadLendingLogs();
+    await logActivity('item_returned', 'Item Returned', '${log.itemName} was returned by ${log.borrowerName}', relatedId: log.itemId);
+  }
+
+  Future<void> deleteLendingLog(String id) async {
+    await DatabaseService.deleteLendingLog(id);
+    await _loadLendingLogs();
   }
 
   Future<void> clearScanHistory() async {
@@ -489,6 +606,8 @@ class InventoryProvider extends ChangeNotifier {
     String? imagePath,
     bool isTemplate = false,
     DateTime? reminderDate,
+    double? price,
+    DateTime? expiryDate,
   }) async {
     final item = ItemModel(
       id: _uuid.v4(),
@@ -499,6 +618,8 @@ class InventoryProvider extends ChangeNotifier {
       imagePath: imagePath,
       isTemplate: isTemplate,
       reminderDate: reminderDate,
+      price: price,
+      expiryDate: expiryDate,
     );
     box.items.add(item);
     await DatabaseService.addItem(item, box.id);
@@ -519,6 +640,8 @@ class InventoryProvider extends ChangeNotifier {
     String? imagePath,
     bool? isTemplate,
     DateTime? reminderDate,
+    double? price,
+    DateTime? expiryDate,
   }) async {
     if (name != null) item.name = name;
     if (description != null) item.description = description;
@@ -527,6 +650,8 @@ class InventoryProvider extends ChangeNotifier {
     if (imagePath != null) item.imagePath = imagePath;
     if (isTemplate != null) item.isTemplate = isTemplate;
     if (reminderDate != null) item.reminderDate = reminderDate;
+    if (price != null) item.price = price;
+    if (expiryDate != null) item.expiryDate = expiryDate;
     
     await DatabaseService.updateItem(item, box.id);
     await box.save();

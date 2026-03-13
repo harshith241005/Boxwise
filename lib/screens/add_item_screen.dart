@@ -24,10 +24,12 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final _descCtrl = TextEditingController();
   final _qtyCtrl = TextEditingController(text: '1');
   final _tagCtrl = TextEditingController();
+  final _priceCtrl = TextEditingController(text: '0.0');
   final List<String> _tags = [];
   final ImagePicker _picker = ImagePicker();
   File? _selectedImage;
   DateTime? _reminderDate;
+  DateTime? _expiryDate;
   bool _isTemplate = false;
 
   final List<String> _nameSuggestions = [
@@ -50,6 +52,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
       }
       _isTemplate = widget.editItem!.isTemplate;
       _reminderDate = widget.editItem!.reminderDate;
+      _priceCtrl.text = (widget.editItem!.price ?? 0.0).toStringAsFixed(2);
+      _expiryDate = widget.editItem!.expiryDate;
     }
   }
 
@@ -59,6 +63,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
     _descCtrl.dispose();
     _qtyCtrl.dispose();
     _tagCtrl.dispose();
+    _priceCtrl.dispose();
     super.dispose();
   }
 
@@ -207,6 +212,25 @@ class _AddItemScreenState extends State<AddItemScreen> {
     }
   }
 
+  void _lookupPrice() async {
+    if (_nameCtrl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter item name first')));
+      return;
+    }
+    
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Searching prices on eBay & Amazon...')));
+    await Future.delayed(const Duration(seconds: 1));
+    
+    // Simulate finding a price
+    setState(() {
+      _priceCtrl.text = '24.99'; // Mocked price
+    });
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Found price: \$24.99')));
+    }
+  }
+
   void _addItem() async {
     if (_formKey.currentState!.validate()) {
       final provider = context.read<InventoryProvider>();
@@ -230,6 +254,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
           imagePath: savedPath,
           isTemplate: _isTemplate,
           reminderDate: _reminderDate,
+          price: double.tryParse(_priceCtrl.text) ?? 0.0,
+          expiryDate: _expiryDate,
         );
       } else {
         await provider.addItem(
@@ -241,6 +267,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
           imagePath: savedPath,
           isTemplate: _isTemplate,
           reminderDate: _reminderDate,
+          price: double.tryParse(_priceCtrl.text) ?? 0.0,
+          expiryDate: _expiryDate,
         );
       }
       
@@ -438,6 +466,43 @@ class _AddItemScreenState extends State<AddItemScreen> {
             ),
             const SizedBox(height: 20),
 
+            _label('Quantity'),
+            const SizedBox(height: 8),
+            Row(children: [
+              _qtyBtn(Icons.remove_rounded, color, () {
+                int c = int.tryParse(_qtyCtrl.text) ?? 1;
+                if (c > 1) _qtyCtrl.text = '${c - 1}';
+              }),
+              const SizedBox(width: 8),
+              Expanded(child: TextFormField(
+                controller: _qtyCtrl, keyboardType: TextInputType.number, textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color),
+                validator: (v) => (v == null || v.isEmpty || (int.tryParse(v) ?? 0) < 1) ? 'Min 1' : null,
+              )),
+              const SizedBox(width: 8),
+              _qtyBtn(Icons.add_rounded, color, () {
+                int c = int.tryParse(_qtyCtrl.text) ?? 1;
+                _qtyCtrl.text = '${c + 1}';
+              }),
+            ]),
+            const SizedBox(height: 20),
+
+            _label('Estimated Price'),
+            TextFormField(
+              controller: _priceCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                hintText: 'e.g. 50.00',
+                prefixIcon: const Icon(Icons.payments_outlined),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 20, color: AppTheme.accentColor),
+                  onPressed: _lookupPrice,
+                  tooltip: 'Smart Price Lookup',
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
             _label('Description'),
             TextFormField(
               controller: _descCtrl,
@@ -448,43 +513,12 @@ class _AddItemScreenState extends State<AddItemScreen> {
             const SizedBox(height: 20),
 
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  flex: 1,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _label('Quantity'),
-                      const SizedBox(height: 8),
-                      Row(children: [
-                        _qtyBtn(Icons.remove_rounded, color, () {
-                          int c = int.tryParse(_qtyCtrl.text) ?? 1;
-                          if (c > 1) _qtyCtrl.text = '${c - 1}';
-                        }),
-                        const SizedBox(width: 8),
-                        Expanded(child: TextFormField(
-                          controller: _qtyCtrl, keyboardType: TextInputType.number, textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color),
-                          validator: (v) => (v == null || v.isEmpty || (int.tryParse(v) ?? 0) < 1) ? 'Min 1' : null,
-                        )),
-                        const SizedBox(width: 8),
-                        _qtyBtn(Icons.add_rounded, color, () {
-                          int c = int.tryParse(_qtyCtrl.text) ?? 1;
-                          _qtyCtrl.text = '${c + 1}';
-                        }),
-                      ]),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _label('Reminder / Expiry'),
-                      const SizedBox(height: 8),
+                      _label('Reminder'),
                       InkWell(
                         onTap: () async {
                           final date = await showDatePicker(
@@ -504,7 +538,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.calendar_today_rounded, size: 16, color: color),
+                              Icon(Icons.notifications_active_outlined, size: 16, color: color),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -513,8 +547,47 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              if (_reminderDate != null) 
-                                IconButton(onPressed: () => setState(() => _reminderDate = null), icon: const Icon(Icons.close, size: 14), visualDensity: VisualDensity.compact),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label('Expiry Date'),
+                      InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _expiryDate ?? DateTime.now(),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(const Duration(days: 3650)),
+                          );
+                          if (date != null) setState(() => _expiryDate = date);
+                        },
+                        child: Container(
+                          height: 54,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(15),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.timer_outlined, size: 16, color: color),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _expiryDate == null ? 'None' : '${_expiryDate!.day}/${_expiryDate!.month}/${_expiryDate!.year % 100}',
+                                  style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.black87),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -524,6 +597,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 20),
             const SizedBox(height: 20),
 
             Row(

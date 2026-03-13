@@ -28,14 +28,14 @@ class AppTheme {
   ];
 
   // Dark Theme
-  static ThemeData get darkTheme {
+  static ThemeData getDarkTheme(Color primary) {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       fontFamily: 'Inter',
       colorScheme: ColorScheme.dark(
-        primary: primaryColor,
-        primaryContainer: primaryDark,
+        primary: primary,
+        primaryContainer: primary.withAlpha(200),
         secondary: accentColor,
         secondaryContainer: accentColor.withAlpha(51),
         surface: const Color(0xFF1A1A2E),
@@ -66,7 +66,7 @@ class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: primaryColor,
+        backgroundColor: primary,
         foregroundColor: Colors.white,
         elevation: 8,
         shape: RoundedRectangleBorder(
@@ -88,8 +88,8 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: primaryColor,
+          borderSide: BorderSide(
+            color: primary,
             width: 2,
           ),
         ),
@@ -104,7 +104,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
+          backgroundColor: primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(
             horizontal: 32,
@@ -123,7 +123,7 @@ class AppTheme {
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: const Color(0xFF1A1A2E),
-        selectedItemColor: primaryColor,
+        selectedItemColor: primary,
         unselectedItemColor: Colors.white.withAlpha(102),
         type: BottomNavigationBarType.fixed,
         elevation: 0,
@@ -138,9 +138,9 @@ class AppTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: primaryColor.withAlpha(26),
-        labelStyle: const TextStyle(
-          color: primaryColor,
+        backgroundColor: primary.withAlpha(26),
+        labelStyle: TextStyle(
+          color: primary,
           fontFamily: 'Inter',
           fontSize: 12,
           fontWeight: FontWeight.w500,
@@ -172,14 +172,14 @@ class AppTheme {
   }
 
   // Light Theme
-  static ThemeData get lightTheme {
+  static ThemeData getLightTheme(Color primary) {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       fontFamily: 'Inter',
       colorScheme: ColorScheme.light(
-        primary: primaryColor,
-        primaryContainer: primaryLight,
+        primary: primary,
+        primaryContainer: primary.withAlpha(200),
         secondary: accentColor,
         secondaryContainer: accentColor.withAlpha(51),
         surface: Colors.white,
@@ -210,7 +210,7 @@ class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: primaryColor,
+        backgroundColor: primary,
         foregroundColor: Colors.white,
         elevation: 8,
         shape: RoundedRectangleBorder(
@@ -232,8 +232,8 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: primaryColor,
+          borderSide: BorderSide(
+            color: primary,
             width: 2,
           ),
         ),
@@ -248,7 +248,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
+          backgroundColor: primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(
             horizontal: 32,
@@ -267,7 +267,7 @@ class AppTheme {
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
-        selectedItemColor: primaryColor,
+        selectedItemColor: primary,
         unselectedItemColor: const Color(0xFF1A1A2E).withAlpha(102),
         type: BottomNavigationBarType.fixed,
         elevation: 0,
@@ -282,9 +282,9 @@ class AppTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: primaryColor.withAlpha(26),
-        labelStyle: const TextStyle(
-          color: primaryColor,
+        backgroundColor: primary.withAlpha(26),
+        labelStyle: TextStyle(
+          color: primary,
           fontFamily: 'Inter',
           fontSize: 12,
           fontWeight: FontWeight.w500,

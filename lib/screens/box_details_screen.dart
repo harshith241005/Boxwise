@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../services/nfc_service.dart';
 import '../models/box_model.dart';
 import '../models/item_model.dart';
 import '../providers/inventory_provider.dart';
@@ -13,6 +14,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:intl/intl.dart';
 class BoxDetailsScreen extends StatefulWidget {
   final BoxModel box;
 
@@ -23,7 +25,23 @@ class BoxDetailsScreen extends StatefulWidget {
 }
 
 class _BoxDetailsScreenState extends State<BoxDetailsScreen> {
-  String _itemSearchQuery = '';
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
+
+  void _writeNfcTag(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => NfcSheet(isWriting: true, dataToWrite: widget.box.id),
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,93 +60,96 @@ class _BoxDetailsScreenState extends State<BoxDetailsScreen> {
                 expandedHeight: 200,
                 pinned: true,
                 flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          color.withAlpha(179),
-                          color.withAlpha(77),
-                          isDark
-                              ? const Color(0xFF0F0F23)
-                              : const Color(0xFFF5F5FA),
-                        ],
-                        stops: const [0.0, 0.5, 1.0],
-                      ),
-                    ),
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withAlpha(51),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: const Icon(
-                                    Icons.inventory_2_rounded,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        box.name?.toString() ?? 'Unnamed Box',
-                                        style: const TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w800,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.location_on_outlined,
-                                            size: 14,
-                                            color: Colors.white70,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            box.location?.toString() ?? 'Unknown',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.white70,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          const Icon(
-                                            Icons.category_outlined,
-                                            size: 14,
-                                            color: Colors.white70,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            box.category?.toString() ?? 'Other',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.white70,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                  background: Hero(
+                    tag: 'box_${box.id}',
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            color.withAlpha(179),
+                            color.withAlpha(77),
+                            isDark
+                                ? const Color(0xFF0F0F23)
+                                : const Color(0xFFF5F5FA),
                           ],
+                          stops: const [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                      child: SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withAlpha(51),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: const Icon(
+                                      Icons.inventory_2_rounded,
+                                      color: Colors.white,
+                                      size: 28,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          box.name?.toString() ?? 'Unnamed Box',
+                                          style: const TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.location_on_outlined,
+                                              size: 14,
+                                              color: Colors.white70,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              box.location?.toString() ?? 'Unknown',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.white70,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            const Icon(
+                                              Icons.category_outlined,
+                                              size: 14,
+                                              color: Colors.white70,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              box.category?.toString() ?? 'Other',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.white70,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -215,11 +236,13 @@ class _BoxDetailsScreenState extends State<BoxDetailsScreen> {
                       if (val == 'pdf') _shareBoxPdf();
                       if (val == 'text') _shareBoxText();
                       if (val == 'label') provider.shareQrLabelPdf(box);
+                      if (val == 'nfc') _writeNfcTag(context);
                     },
                     itemBuilder: (context) => [
                       const PopupMenuItem(value: 'pdf', child: Text('Share PDF Report')),
                       const PopupMenuItem(value: 'text', child: Text('Share as Text List')),
                       const PopupMenuItem(value: 'label', child: Text('Share Printable QR Label')),
+                      const PopupMenuItem(value: 'nfc', child: Text('Write to NFC Tag')),
                     ],
                   ),
                   IconButton(
@@ -262,6 +285,8 @@ class _BoxDetailsScreenState extends State<BoxDetailsScreen> {
                       ],
                     ),
                     const SizedBox(height: 24),
+                    _buildVolumeVisualizer(context, box, color),
+                    const SizedBox(height: 24),
 
                     // Items header
                     Row(
@@ -298,7 +323,7 @@ class _BoxDetailsScreenState extends State<BoxDetailsScreen> {
                           borderSide: BorderSide.none,
                         ),
                       ),
-                      onChanged: (val) => setState(() => _itemSearchQuery = val),
+                      onChanged: (val) => setState(() => _searchQuery = val),
                     ),
                     const SizedBox(height: 12),
                   ]),
@@ -308,9 +333,9 @@ class _BoxDetailsScreenState extends State<BoxDetailsScreen> {
               // Items list
               Builder(
                 builder: (context) {
-                  final filteredItems = box.items.where((i) {
+                  final filteredItems = widget.box.items.where((i) {
                     if (i == null) return false;
-                    final q = _itemSearchQuery.toLowerCase();
+                    final q = _searchQuery.toLowerCase();
                     final nameMatch = (i.name ?? '').toLowerCase().contains(q);
                     final tagsMatch = (i.tags ?? []).any((t) => (t ?? '').toString().toLowerCase().contains(q));
                     return nameMatch || tagsMatch;
@@ -321,8 +346,8 @@ class _BoxDetailsScreenState extends State<BoxDetailsScreen> {
                       hasScrollBody: false,
                       child: EmptyStateWidget(
                         icon: Icons.category_outlined,
-                        title: _itemSearchQuery.isNotEmpty ? 'No matches found' : 'No items in this box',
-                        subtitle: _itemSearchQuery.isNotEmpty ? 'Try a different search term' : 'Add items to organize inventory',
+                        title: _searchQuery.isNotEmpty ? 'No matches found' : 'No items in this box',
+                        subtitle: _searchQuery.isNotEmpty ? 'Try a different search term' : 'Add items to organize inventory',
                       ),
                     );
                   }
@@ -539,7 +564,85 @@ class _BoxDetailsScreenState extends State<BoxDetailsScreen> {
       ),
     );
   }
+  Widget _buildVolumeVisualizer(BuildContext context, BoxModel box, Color color) {
+    double fillPercent = (box.capacity ?? 0) > 0 ? (box.items.length / box.capacity!).clamp(0.0, 1.0) : 0.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          // 3D Box Mockup
+          SizedBox(
+            width: 80, height: 80,
+            child: Stack(
+              children: [
+                Transform(
+                  transform: Matrix4.identity()..setEntry(3, 2, 0.001)..rotateX(-0.5)..rotateY(0.5),
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: 60, height: 60,
+                    decoration: BoxDecoration(
+                      color: color.withAlpha(26),
+                      border: Border.all(color: color, width: 2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        width: double.infinity,
+                        height: 60 * fillPercent,
+                        decoration: BoxDecoration(
+                          color: color.withAlpha(128),
+                          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(2)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 0, right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                    child: Text('${(fillPercent * 100).toInt()}%', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Spatial Utilization', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 4),
+                Text(
+                  (box.capacity ?? 0) > 0 
+                    ? 'Using ${box.items.length} out of ${box.capacity} capacity units.'
+                    : 'Total capacity not set for this box.',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: fillPercent,
+                    backgroundColor: color.withAlpha(26),
+                    color: color,
+                    minHeight: 6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
 
 class _ItemCard extends StatelessWidget {
   final ItemModel item;
@@ -747,6 +850,14 @@ class _ItemCard extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
+                            icon: const Icon(Icons.front_hand_rounded, size: 20),
+                            onPressed: () => _showLendDialog(context, provider, item),
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                            tooltip: 'Lend Item',
+                          ),
+                          IconButton(
                             icon: const Icon(Icons.edit_rounded, size: 20),
                             onPressed: () {
                                Navigator.push(context, MaterialPageRoute(builder: (_) => AddItemScreen(box: box, editItem: item)));
@@ -814,12 +925,87 @@ class _QuantityButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Icon(icon, size: 18),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white.withAlpha(26)
+            : Colors.black.withAlpha(13),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Icon(icon, size: 16),
+        ),
       ),
     );
   }
+}
+
+void _showLendDialog(BuildContext context, InventoryProvider provider, ItemModel item) {
+  final nameCtrl = TextEditingController();
+  DateTime? selectedDate;
+
+  showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: Text('Lend ${item.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Borrower Name',
+                hintText: 'Who is borrowing this?',
+                prefixIcon: Icon(Icons.person_outline_rounded),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.calendar_today_rounded),
+              title: Text(selectedDate == null 
+                ? 'No Return Date Set' 
+                : 'Return By: ${DateFormat('MMM dd, yyyy').format(selectedDate!)}'),
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now().add(const Duration(days: 7)),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (date != null) {
+                  setState(() => selectedDate = date);
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              if (nameCtrl.text.trim().isEmpty) return;
+              provider.lendItem(
+                itemId: item.id,
+                itemName: item.name ?? 'Item',
+                borrowerName: nameCtrl.text.trim(),
+                returnDate: selectedDate,
+              );
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Marked as lent to ${nameCtrl.text}')),
+              );
+            },
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
