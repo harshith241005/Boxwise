@@ -129,7 +129,7 @@ class ShoppingListScreen extends StatelessWidget {
     final items = provider.lowStockItems;
     if (items.isEmpty) return;
 
-    String list = "📦 Boxwise Shopping List:\n\n";
+    String list = "📦 Boxvise Shopping List:\n\n";
     for (var i in items) {
       list += "• ${i['item'].name} (Low: ${i['item'].quantity})\n";
     }

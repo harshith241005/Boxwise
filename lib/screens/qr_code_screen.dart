@@ -54,7 +54,7 @@ class QrCodeScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     QrImageView(
-                      data: 'BOXWISE:${box.uuid}',
+                      data: 'Boxvise:${box.uuid}',
                       version: QrVersions.auto,
                       size: 220,
                       eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: color),

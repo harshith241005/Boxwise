@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:csv/csv.dart';
@@ -37,11 +38,13 @@ class InventoryProvider extends ChangeNotifier {
   List<LendingModel> _lendingLogs = [];
   List<Map<String, dynamic>> _scanHistory = [];
   List<Map<String, String>> _collaborators = [];
+  List<Map<String, dynamic>> _plannerTasks = [];
 
   List<ActivityModel> get activities => _activities;
   List<LendingModel> get lendingLogs => _lendingLogs;
   List<Map<String, dynamic>> get scanHistory => _scanHistory;
   List<Map<String, String>> get collaborators => _collaborators;
+  List<Map<String, dynamic>> get plannerTasks => _plannerTasks;
 
   Future<void> _loadActivities() async {
     _activities = await DatabaseService.getActivities();
@@ -51,6 +54,35 @@ class InventoryProvider extends ChangeNotifier {
   Future<void> _loadScanHistory() async {
     _scanHistory = await DatabaseService.getScanHistory();
     notifyListeners();
+  }
+
+  Future<void> _loadPlannerTasks() async {
+    final raw = await DatabaseService.getSetting('planner_tasks', defaultValue: []);
+    if (raw is List) {
+      _plannerTasks = raw
+          .whereType<Map>()
+          .map((entry) => Map<String, dynamic>.from(entry))
+          .toList();
+    } else if (raw is String && raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          _plannerTasks = decoded
+              .whereType<Map>()
+              .map((entry) => Map<String, dynamic>.from(entry))
+              .toList();
+        }
+      } catch (_) {
+        _plannerTasks = [];
+      }
+    } else {
+      _plannerTasks = [];
+    }
+    notifyListeners();
+  }
+
+  Future<void> _persistPlannerTasks() async {
+    await DatabaseService.setSetting('planner_tasks', _plannerTasks);
   }
 
   Future<void> logActivity(String type, String title, String subtitle, {String? relatedId}) async {
@@ -239,6 +271,8 @@ class InventoryProvider extends ChangeNotifier {
     await _loadScanHistory();
     await _loadLendingLogs();
     await _loadCollaborators();
+    await _loadPlannerTasks();
+    await generateSmartPlannerTasks();
     notifyListeners();
   }
 
@@ -512,6 +546,114 @@ class InventoryProvider extends ChangeNotifier {
   Future<void> clearScanHistory() async {
     await DatabaseService.clearScanHistory();
     await _loadScanHistory();
+  }
+
+  Future<void> addPlannerTask({
+    required String title,
+    String type = 'custom',
+    String? subtitle,
+    DateTime? dueDate,
+    String? relatedId,
+  }) async {
+    final task = <String, dynamic>{
+      'id': _uuid.v4(),
+      'title': title,
+      'subtitle': subtitle ?? '',
+      'type': type,
+      'dueDate': dueDate?.toIso8601String(),
+      'isCompleted': false,
+      'relatedId': relatedId,
+      'createdAt': DateTime.now().toIso8601String(),
+    };
+    _plannerTasks.insert(0, task);
+    await _persistPlannerTasks();
+    notifyListeners();
+  }
+
+  Future<void> togglePlannerTask(String id, bool isCompleted) async {
+    final index = _plannerTasks.indexWhere((task) => task['id'] == id);
+    if (index == -1) return;
+    _plannerTasks[index]['isCompleted'] = isCompleted;
+    await _persistPlannerTasks();
+    notifyListeners();
+  }
+
+  Future<void> removePlannerTask(String id) async {
+    _plannerTasks.removeWhere((task) => task['id'] == id);
+    await _persistPlannerTasks();
+    notifyListeners();
+  }
+
+  Future<void> generateSmartPlannerTasks() async {
+    final existingSignatures = _plannerTasks
+        .map((task) => '${task['type']}::${task['title']}')
+        .toSet();
+
+    for (final low in lowStockItems.take(6)) {
+      final item = low['item'];
+      final box = low['box'];
+      final title = 'Restock ${item.name ?? 'Item'}';
+      final signature = 'restock::$title';
+      if (!existingSignatures.contains(signature)) {
+        _plannerTasks.add({
+          'id': _uuid.v4(),
+          'title': title,
+          'subtitle': 'Low stock in ${box.name ?? 'Unknown Box'}',
+          'type': 'restock',
+          'dueDate': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
+          'isCompleted': false,
+          'relatedId': item.id,
+          'createdAt': DateTime.now().toIso8601String(),
+        });
+        existingSignatures.add(signature);
+      }
+    }
+
+    for (final expiring in expiringItems.take(6)) {
+      final item = expiring['item'];
+      final days = expiring['days'];
+      final title = 'Review expiry: ${item.name ?? 'Item'}';
+      final signature = 'expiry::$title';
+      if (!existingSignatures.contains(signature)) {
+        _plannerTasks.add({
+          'id': _uuid.v4(),
+          'title': title,
+          'subtitle': 'Expires in $days day(s)',
+          'type': 'expiry',
+          'dueDate': DateTime.now().add(Duration(days: days is int && days >= 0 ? days : 1)).toIso8601String(),
+          'isCompleted': false,
+          'relatedId': item.id,
+          'createdAt': DateTime.now().toIso8601String(),
+        });
+        existingSignatures.add(signature);
+      }
+    }
+
+    for (final log in lendingLogs.where((entry) => entry.status == 'active').take(4)) {
+      final title = 'Follow up: ${log.itemName}';
+      final signature = 'lending::$title';
+      if (!existingSignatures.contains(signature)) {
+        _plannerTasks.add({
+          'id': _uuid.v4(),
+          'title': title,
+          'subtitle': 'Borrowed by ${log.borrowerName}',
+          'type': 'lending',
+          'dueDate': (log.returnDate ?? DateTime.now().add(const Duration(days: 3))).toIso8601String(),
+          'isCompleted': false,
+          'relatedId': log.id,
+          'createdAt': DateTime.now().toIso8601String(),
+        });
+        existingSignatures.add(signature);
+      }
+    }
+
+    _plannerTasks.sort((a, b) {
+      final aDue = DateTime.tryParse((a['dueDate'] ?? '').toString()) ?? DateTime.now().add(const Duration(days: 3650));
+      final bDue = DateTime.tryParse((b['dueDate'] ?? '').toString()) ?? DateTime.now().add(const Duration(days: 3650));
+      return aDue.compareTo(bDue);
+    });
+    await _persistPlannerTasks();
+    notifyListeners();
   }
 
   // --- Localization ---
@@ -864,11 +1006,11 @@ class InventoryProvider extends ChangeNotifier {
     String csv = const ListToCsvConverter().convert(rows);
 
     final dir = await getApplicationDocumentsDirectory();
-    final path = '${dir.path}/boxwise_inventory.csv';
+    final path = '${dir.path}/Boxvise_inventory.csv';
     final file = File(path);
     await file.writeAsString(csv);
     // ignore: deprecated_member_use
-    await Share.shareXFiles([XFile(path)], text: 'Boxwise Inventory Export');
+    await Share.shareXFiles([XFile(path)], text: 'Boxvise Inventory Export');
   }
 
   Future<void> exportToPDF() async {
@@ -882,7 +1024,7 @@ class InventoryProvider extends ChangeNotifier {
           return [
             pw.Header(
               level: 0,
-              child: pw.Text('Boxwise Inventory Report', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              child: pw.Text('Boxvise Inventory Report', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
             ),
             pw.SizedBox(height: 10),
             pw.Text('Generated on ${DateTime.now().toString().split(".")[0]}'),
@@ -906,11 +1048,11 @@ class InventoryProvider extends ChangeNotifier {
     );
 
     final dir = await getApplicationDocumentsDirectory();
-    final path = '${dir.path}/boxwise_inventory.pdf';
+    final path = '${dir.path}/Boxvise_inventory.pdf';
     final file = File(path);
     await file.writeAsBytes(await pdf.save());
     // ignore: deprecated_member_use
-    await Share.shareXFiles([XFile(path)], text: 'Boxwise Inventory Export');
+    await Share.shareXFiles([XFile(path)], text: 'Boxvise Inventory Export');
   }
 
   Future<void> importFromCSV(String path) async {

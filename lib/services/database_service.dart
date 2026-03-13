@@ -12,7 +12,7 @@ class DatabaseService {
 
   static Future<void> initialize() async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'boxwise_inventory.db');
+    final path = join(dbPath, 'Boxvise_inventory.db');
 
     _db = await openDatabase(
       path,

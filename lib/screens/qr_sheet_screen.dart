@@ -127,7 +127,7 @@ class _QrSheetScreenState extends State<QrSheetScreen> {
           ),
           const SizedBox(height: 8),
           QrImageView(
-            data: 'BOXWISE:${box.uuid}',
+            data: 'Boxvise:${box.uuid}',
             version: QrVersions.auto,
             size: 80,
             padding: EdgeInsets.zero,
@@ -201,7 +201,7 @@ class _QrSheetScreenState extends State<QrSheetScreen> {
             children: [
               pw.Header(
                 level: 0,
-                child: pw.Text('Boxwise QR Labels - Page ${_currentPage + 1}', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                child: pw.Text('Boxvise QR Labels - Page ${_currentPage + 1}', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
               ),
               pw.SizedBox(height: 20),
               pw.GridView(
@@ -223,7 +223,7 @@ class _QrSheetScreenState extends State<QrSheetScreen> {
                         pw.SizedBox(height: 5),
                         pw.BarcodeWidget(
                           barcode: pw.Barcode.qrCode(),
-                          data: 'BOXWISE:${box.uuid}',
+                          data: 'Boxvise:${box.uuid}',
                           width: 80,
                           height: 80,
                         ),

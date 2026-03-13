@@ -18,6 +18,8 @@ import 'qr_sheet_screen.dart';
 import 'shopping_list_screen.dart';
 import 'collaborators_screen.dart';
 import 'profile_screen.dart';
+import 'feature_center_screen.dart';
+import 'planner_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -58,29 +60,8 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: activeIndex,
-        children: const [
-          _HomeTab(),
-          SearchScreen(),
-          BoxesScreen(),
-          SettingsScreen(),
-        ],
-      ),
-      floatingActionButton: _currentIndex == 0
-          ? ScaleTransition(
-              scale: CurvedAnimation(
-                parent: _fabController,
-                curve: Curves.elasticOut,
-              ),
-              child: FloatingActionButton(
-                onPressed: () => _showQuickAddMenu(context),
-                child: const Icon(Icons.add_rounded, size: 30),
-              ),
-            )
-          : null,
-      bottomNavigationBar: _buildBottomNav(context),
+    return const Scaffold(
+      body: _HomeTab(),
     );
   }
 
@@ -450,6 +431,16 @@ class _HomeTab extends StatelessWidget {
               toolbarHeight: 70,
               title: const Text('Boxvise', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
               actions: [
+                IconButton(
+                  tooltip: 'Search',
+                  icon: const Icon(Icons.search_rounded),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen())),
+                ),
+                IconButton(
+                  tooltip: 'Settings',
+                  icon: const Icon(Icons.settings_rounded),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+                ),
                 Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: TextButton.icon(
@@ -621,6 +612,12 @@ class _HomeTab extends StatelessWidget {
                         }),
                         _buildactionTile(context, 'Analyze AI', Icons.psychology_rounded, Colors.pink, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const AiVisionScreen()));
+                        }),
+                        _buildactionTile(context, 'Planner', Icons.task_alt_rounded, Colors.blue, () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen()));
+                        }),
+                        _buildactionTile(context, 'All Features', Icons.widgets_rounded, Colors.green, () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const FeatureCenterScreen()));
                         }),
                       ],
                     ),
@@ -1017,6 +1014,7 @@ class _HomeTab extends StatelessWidget {
                           color: color,
                           backgroundColor: color.withAlpha(28),
                         ),
+                      ),
                     ],
                   ),
                 ),

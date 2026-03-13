@@ -7,6 +7,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../providers/inventory_provider.dart';
 import '../theme/app_theme.dart';
 import 'scan_history_screen.dart';
+import 'feature_center_screen.dart';
+import 'planner_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -135,64 +137,79 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ]),
 
-                  // Interaction Section
-                  _buildSectionHeader('INTERACTION'),
+                  _buildSectionHeader('PRODUCTIVITY'),
                   _buildSectionCard([
                     _buildSettingTile(
-                      title: 'Share the App',
-                      subtitle: 'Recommend Boxvise to friends',
+                      title: 'Smart Planner',
+                      subtitle: 'Daily task board for actions',
+                      icon: Icons.task_alt_rounded,
+                      iconColor: Colors.blue,
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen())),
+                    ),
+                    _buildDivider(),
+                    _buildSettingTile(
+                      title: 'Feature Center',
+                      subtitle: 'Open all advanced modules',
+                      icon: Icons.widgets_rounded,
+                      iconColor: Colors.green,
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FeatureCenterScreen())),
+                    ),
+                  ]),
+
+                  // Interaction Section
+                  _buildSectionHeader('COMMUNITY & SUPPORT'),
+                  _buildSectionCard([
+                    _buildSettingTile(
+                      title: 'Share Boxvise',
+                      subtitle: 'Recommend to friends & family',
                       icon: Icons.share_rounded,
                       iconColor: AppTheme.primaryColor,
-                      onTap: () => Share.share('Check out Boxvise - The smartest inventory manager! https://github.com/harshith241005/Boxwise'),
+                      onTap: () => Share.share('Check out Boxvise - The smartest inventory manager! https://github.com/harshith241005/Boxvise'),
                     ),
                     _buildDivider(),
                     _buildSettingTile(
-                      title: 'Rate on App Store',
-                      subtitle: 'Your feedback helps us grow',
-                      icon: Icons.star_rounded,
-                      iconColor: Colors.amber,
-                      onTap: () => _launchUrl('https://github.com/harshith241005/Boxwise'),
-                    ),
-                    _buildDivider(),
-                    _buildSettingTile(
-                      title: 'Help & Support',
-                      subtitle: 'Contact our support team',
-                      icon: Icons.support_agent_rounded,
+                      title: 'Help Center',
+                      subtitle: 'FAQs and integration guides',
+                      icon: Icons.help_outline_rounded,
                       iconColor: Colors.teal,
-                      onTap: () => _launchUrl('mailto:support@boxwise.app'),
+                      onTap: () => _launchUrl('https://github.com/harshith241005/Boxvise'),
                     ),
                     _buildDivider(),
+                    _buildSettingTile(
+                      title: 'Contact Support',
+                      subtitle: 'Get help with your account',
+                      icon: Icons.support_agent_rounded,
+                      iconColor: Colors.orange,
+                      onTap: () => _launchUrl('mailto:support@Boxvise.app'),
+                    ),
+                  ]),
+
+                  // Legal Section
+                  _buildSectionHeader('LEGAL & PRIVACY'),
+                  _buildSectionCard([
                     _buildSettingTile(
                       title: 'Privacy Policy',
-                      subtitle: 'How your data is stored and secured',
+                      subtitle: 'Data usage and protection policy',
                       icon: Icons.privacy_tip_rounded,
                       iconColor: Colors.green,
-                      onTap: () => _launchUrl('https://github.com/harshith241005/Boxwise'),
+                      onTap: () => _launchUrl('https://github.com/harshith241005/Boxvise'),
                     ),
                     _buildDivider(),
                     _buildSettingTile(
-                      title: 'Terms of Use',
-                      subtitle: 'Usage rules and limitations',
-                      icon: Icons.gavel_rounded,
+                      title: 'Terms of Service',
+                      subtitle: 'Legal usage agreement',
+                      icon: Icons.description_rounded,
                       iconColor: Colors.indigo,
-                      onTap: () => _launchUrl('https://github.com/harshith241005/Boxwise'),
-                    ),
-                    _buildDivider(),
-                    _buildSettingTile(
-                      title: 'Send Feedback',
-                      subtitle: 'Tell us what to improve in Boxvise',
-                      icon: Icons.feedback_rounded,
-                      iconColor: Colors.orange,
-                      onTap: () => _launchUrl('mailto:feedback@boxwise.app?subject=Boxvise%20Feedback'),
+                      onTap: () => _launchUrl('https://github.com/harshith241005/Boxvise'),
                     ),
                   ]),
 
                   // Danger Zone Section
-                  _buildSectionHeader('DANGER ZONE'),
+                  _buildSectionHeader('SYSTEM'),
                   _buildSectionCard([
                     _buildSettingTile(
                       title: 'Factory Reset',
-                      subtitle: 'Careful! Wipes everything',
+                      subtitle: 'Wipe all local data and boxes',
                       icon: Icons.delete_forever_rounded,
                       iconColor: AppTheme.errorColor,
                       textColor: AppTheme.errorColor,
@@ -200,11 +217,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ]),
 
-                  const SizedBox(height: 28),
-                  Center(
-                    child: Text('Boxvise v$_version ($_buildNumber)', style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38)),
+                  const SizedBox(height: 32),
+                  
+                  // Premium About Section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withAlpha(5) : Colors.black.withAlpha(5),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'BOXVISE',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 4,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Version $_version ($_buildNumber)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.white38 : Colors.black38,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Made with ',
+                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38),
+                            ),
+                            const Icon(Icons.favorite_rounded, color: Colors.red, size: 12),
+                            Text(
+                              ' for Organization',
+                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 48),
                 ],
               ),
             ),

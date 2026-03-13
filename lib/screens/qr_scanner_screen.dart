@@ -35,9 +35,9 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
       setState(() => _hasScanned = true);
 
-      // Check if this is a Boxwise QR code (starts with BOXWISE:)
-      if (rawValue.startsWith('BOXWISE:')) {
-        final uuid = rawValue.substring(8); // Remove "BOXWISE:" prefix
+      // Check if this is a Boxvise QR code (starts with Boxvise:)
+      if (rawValue.startsWith('Boxvise:')) {
+        final uuid = rawValue.substring(8); // Remove "Boxvise:" prefix
         _navigateToBox(uuid);
       } else {
         _showInvalidQRDialog();

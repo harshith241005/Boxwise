@@ -116,7 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 _buildTextField('Full Name *', _nameController, Icons.person_outline_rounded),
                 const SizedBox(height: 16),
-                _buildTextField('Email Address', _emailController, Icons.email_outlined_rounded),
+                _buildTextField('Email Address', _emailController, Icons.email_outlined),
                 const SizedBox(height: 16),
                 _buildTextField('Phone Number', _phoneController, Icons.phone_outlined),
                 const SizedBox(height: 16),
