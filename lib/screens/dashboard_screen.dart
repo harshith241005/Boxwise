@@ -437,6 +437,26 @@ class _HomeTab extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: IconButton(
+                        onPressed: () {
+                          final state = context.findAncestorStateOfType<_DashboardScreenState>();
+                          if (state != null) {
+                            state.setState(() => state._currentIndex = 1);
+                          }
+                        },
+                        icon: const Icon(Icons.search_rounded, size: 24, color: AppTheme.primaryColor),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withAlpha(20),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: IconButton(
                         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen())),
                         icon: const Icon(Icons.qr_code_scanner_rounded, size: 24, color: AppTheme.primaryColor),
                       ),
