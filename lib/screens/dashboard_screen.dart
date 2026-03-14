@@ -381,45 +381,190 @@ class _HomeTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionHeader(
-          context, 
-          'Rooms & Locations',
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
-          ),
-          child: ListView.separated(
-            shrinkWrap: true,
-            primary: false,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: locations.length,
-            separatorBuilder: (_, __) => Divider(height: 1, indent: 56, color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(5)),
-            itemBuilder: (context, index) {
-              final loc = locations[index];
-              final boxCount = provider.boxes.where((b) => (b.location ?? '').trim() == loc).length;
-              final itemCount = heatmap[loc] ?? 0;
-              return ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: AppTheme.primaryColor.withAlpha(20), borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.room_rounded, color: AppTheme.primaryColor, size: 20),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Rooms & Locations',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Organize your items by their physical place',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white38 : Colors.black38,
                 ),
-                title: Text(loc, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                subtitle: Text('$boxCount boxes • $itemCount items', style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54)),
-                trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const BoxesScreen()));
-                },
-              );
-            },
+              ),
+            ],
           ),
+        ),
+        ListView.separated(
+          shrinkWrap: true,
+          primary: false,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: locations.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final loc = locations[index];
+            final boxCount = provider.boxes.where((b) => (b.location ?? '').trim() == loc).length;
+            final itemCount = heatmap[loc] ?? 0;
+            return GestureDetector(
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BoxesScreen())),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withAlpha(15),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(Icons.room_rounded, color: AppTheme.primaryColor, size: 24),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            loc,
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$boxCount boxes • $itemCount items',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? Colors.white54 : Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded, size: 24, color: Colors.grey),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ],
+    );
+  }
+
+  Widget _buildFeatureCard(
+    BuildContext context,
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    String buttonText,
+    VoidCallback onTap,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: color.withAlpha(isDark ? 30 : 20),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: color.withAlpha(51)),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -20,
+            bottom: -20,
+            child: Icon(
+              icon,
+              size: 140,
+              color: color.withAlpha(20),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? Colors.white70 : Colors.black54,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withAlpha(40),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Icon(icon, color: color, size: 32),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: onTap,
+                  icon: Icon(icon, size: 18),
+                  label: Text(buttonText),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: color,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -502,25 +647,44 @@ class _HomeTab extends StatelessWidget {
 
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Welcome back 👋',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome,',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                        const Text(
+                          'Boxvise User', // We could pull this from a provider if available
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -1,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Everything organized, always.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white38 : Colors.black38,
+                    GestureDetector(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppTheme.primaryColor.withAlpha(50), width: 2),
+                        ),
+                        child: CircleAvatar(
+                          radius: 28,
+                          backgroundColor: AppTheme.primaryColor,
+                          child: const Icon(Icons.person_rounded, color: Colors.white, size: 32),
+                        ),
                       ),
                     ),
                   ],
@@ -532,74 +696,36 @@ class _HomeTab extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
-                    _sectionHeader(
-                      context, 
-                      'Insights', 
-                      trailing: '›',
-                      onTrailingTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsScreen())),
+                    _buildFeatureCard(
+                      context,
+                      'Inventory Overview',
+                      'Review all your income and expense records.',
+                      Icons.analytics_rounded,
+                      Colors.orange,
+                      'View Details',
+                      () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsScreen())),
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 160,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        clipBehavior: Clip.none,
-                        children: [
-                          _buildHorizontalStatCard(context, 'Total Quantity', '${provider.totalQuantity}', Icons.stacked_bar_chart_rounded, Colors.green),
-                          const SizedBox(width: 12),
-                          _buildHorizontalStatCard(context, 'Space Index', '${(provider.totalSpaceUsage * 100).toInt()}%', Icons.donut_large_rounded, Colors.orange),
-                          const SizedBox(width: 12),
-                          _buildHorizontalStatCard(context, 'Boxes', '${provider.totalBoxes}', Icons.inventory_2_rounded, AppTheme.primaryColor),
-                          const SizedBox(width: 12),
-                          _buildHorizontalStatCard(context, 'Items', '${provider.totalItems}', Icons.category_rounded, AppTheme.accentColor),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    const SizedBox(height: 20),
-
-                    _sectionHeader(context, 'Quick Hub'),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(child: _buildQuickHubCard(context, 'Create Box', Icons.add_box_rounded, Colors.teal, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
-                        })),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildQuickHubCard(context, 'Add Item', Icons.add_circle_rounded, Colors.deepPurple, () {
-                          final provider = context.read<InventoryProvider>();
-                          _showAddItemListDialog(context, provider);
-                        })),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildQuickHubCard(context, 'Generate QR', Icons.qr_code_2_rounded, Colors.teal, () {
-                          final provider = context.read<InventoryProvider>();
-                          _showGeneratedQRs(context, provider);
-                        })),
-                      ],
+                    _buildFeatureCard(
+                      context,
+                      'Smart Planner',
+                      'Organize your storage with AI-powered task highlights.',
+                      Icons.psychology_rounded,
+                      Colors.blue,
+                      'Open Planner',
+                      () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen())),
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(child: _buildQuickHubCard(context, 'Travel', Icons.local_shipping_rounded, Colors.indigo, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const TravelScreen()));
-                        })),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildQuickHubCard(context, 'Shopping', Icons.shopping_cart_rounded, Colors.orange, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingListScreen()));
-                        })),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildQuickHubCard(context, 'Planner', Icons.task_alt_rounded, Colors.blue, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen()));
-                        })),
-                      ],
-                    ),
+                  ],
+                ),
+              ),
+            ),
+
+                    _buildLocationMapping(context, provider),
                     const SizedBox(height: 24),
 
+                    _sectionHeader(context, 'Recent Activity'),
+                    const SizedBox(height: 12),
                     _activityTimeline(context, provider),
                     const SizedBox(height: 24),
 
