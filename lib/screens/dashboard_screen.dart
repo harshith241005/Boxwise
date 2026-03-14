@@ -372,99 +372,6 @@ class _HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildLocationMapping(BuildContext context, InventoryProvider provider) {
-    final heatmap = provider.locationHeatmap;
-    final locations = provider.allLocations;
-    if (locations.isEmpty) return const SizedBox.shrink();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Rooms & Locations',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Organize your items by their physical place',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white38 : Colors.black38,
-                ),
-              ),
-            ],
-          ),
-        ),
-        ListView.separated(
-          shrinkWrap: true,
-          primary: false,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: locations.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final loc = locations[index];
-            final boxCount = provider.boxes.where((b) => (b.location ?? '').trim() == loc).length;
-            final itemCount = heatmap[loc] ?? 0;
-            return GestureDetector(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BoxesScreen())),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withAlpha(15),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(Icons.room_rounded, color: AppTheme.primaryColor, size: 24),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            loc,
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '$boxCount boxes • $itemCount items',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.white54 : Colors.black54,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right_rounded, size: 24, color: Colors.grey),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
 
   Widget _buildFeatureCard(
     BuildContext context,
@@ -648,43 +555,23 @@ class _HomeTab extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome,',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: isDark ? Colors.white70 : Colors.black54,
-                          ),
-                        ),
-                        const Text(
-                          'Boxvise User', // We could pull this from a provider if available
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -1,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'Welcome,',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white70 : Colors.black54,
+                      ),
                     ),
-                    GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppTheme.primaryColor.withAlpha(50), width: 2),
-                        ),
-                        child: CircleAvatar(
-                          radius: 28,
-                          backgroundColor: AppTheme.primaryColor,
-                          child: const Icon(Icons.person_rounded, color: Colors.white, size: 32),
-                        ),
+                    const Text(
+                      'Boxvise User',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1,
                       ),
                     ),
                   ],
@@ -700,21 +587,47 @@ class _HomeTab extends StatelessWidget {
                     _buildFeatureCard(
                       context,
                       'Inventory Overview',
-                      'Review all your income and expense records.',
+                      'Review all your records and storage distribution.',
                       Icons.analytics_rounded,
                       Colors.orange,
                       'View Details',
                       () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsScreen())),
                     ),
+                    const SizedBox(height: 24),
+                    _sectionHeader(context, 'Quick Hub'),
                     const SizedBox(height: 16),
-                    _buildFeatureCard(
-                      context,
-                      'Smart Planner',
-                      'Organize your storage with AI-powered task highlights.',
-                      Icons.psychology_rounded,
-                      Colors.blue,
-                      'Open Planner',
-                      () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen())),
+                    Row(
+                      children: [
+                        Expanded(child: _buildQuickHubCard(context, 'Create Box', Icons.add_box_rounded, Colors.teal, () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
+                        })),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildQuickHubCard(context, 'Add Item', Icons.add_circle_rounded, Colors.indigo, () {
+                          final provider = context.read<InventoryProvider>();
+                          _showAddItemListDialog(context, provider);
+                        })),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildQuickHubCard(context, 'Generate QR', Icons.qr_code_2_rounded, Colors.teal, () {
+                          final provider = context.read<InventoryProvider>();
+                          _showGeneratedQRs(context, provider);
+                        })),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: _buildQuickHubCard(context, 'Travel', Icons.local_shipping_rounded, Colors.indigo, () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const TravelScreen()));
+                        })),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildQuickHubCard(context, 'Shopping', Icons.shopping_cart_rounded, Colors.orange, () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingListScreen()));
+                        })),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildQuickHubCard(context, 'Planner', Icons.task_alt_rounded, Colors.blue, () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen()));
+                        })),
+                      ],
                     ),
                   ],
                 ),
@@ -722,22 +635,8 @@ class _HomeTab extends StatelessWidget {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLocationMapping(context, provider),
-                    const SizedBox(height: 24),
-
-                    _sectionHeader(context, 'Recent Activity'),
-                    const SizedBox(height: 12),
-                    _activityTimeline(context, provider),
-                    const SizedBox(height: 24),
-
-                    _sectionHeader(context, 'Box Overview', trailing: '${provider.totalBoxes} boxes'),
-                    const SizedBox(height: 12),
-                  ],
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: _sectionHeader(context, 'Box Overview', trailing: '${provider.totalBoxes} boxes'),
               ),
             ),
 
@@ -977,43 +876,6 @@ class _HomeTab extends StatelessWidget {
       ],
     );
   }
-
-  Widget _activityTimeline(BuildContext context, InventoryProvider provider) {
-    final activities = provider.activities.take(5).toList();
-    if (activities.isEmpty) return const SizedBox.shrink();
-    
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionHeader(
-          context, 
-          'Recent Activity', 
-          trailing: 'View All',
-          onTrailingTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen())),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withAlpha(isDark ? 51 : 13), blurRadius: 20, offset: const Offset(0, 10)),
-            ],
-          ),
-          child: Column(
-            children: activities.asMap().entries.map((entry) {
-              final activity = entry.value;
-              final isLast = entry.key == activities.length - 1;
-              return Column(
-                children: [
-                  ListTile(
-                    onTap: () {},
-                    leading: Container(
-                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: _getActivityColor(activity.type).withAlpha(26),
                         borderRadius: BorderRadius.circular(12),
