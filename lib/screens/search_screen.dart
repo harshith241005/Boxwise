@@ -137,6 +137,7 @@ class _SearchScreenState extends State<SearchScreen> {
           snap: true,
           pinned: true,
           elevation: 0,
+          automaticallyImplyLeading: false,
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           title: const Text('Search', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
           actions: [
@@ -217,12 +218,12 @@ class _SearchScreenState extends State<SearchScreen> {
                   Icon(Icons.search_rounded, size: 80, color: Colors.grey.withAlpha(50)),
                   const SizedBox(height: 24),
                   const Text(
-                    'Search Your Inventory',
+                    'Find Anything',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.grey),
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Type above or use filters to find specific items instantly',
+                    'Type or use filters',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey, fontSize: 14),
                   ),
@@ -238,9 +239,9 @@ class _SearchScreenState extends State<SearchScreen> {
               children: [
                 Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.withAlpha(80)),
                 const SizedBox(height: 24),
-                const Text('No Items Found', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.grey)),
+                const Text('Nothing found', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.grey)),
                 const SizedBox(height: 12),
-                const Text('Try another keyword or filter', style: TextStyle(color: Colors.grey, fontSize: 15)),
+                const Text('Try different keywords', style: TextStyle(color: Colors.grey, fontSize: 15)),
                 const SizedBox(height: 32),
                 TextButton.icon(
                   onPressed: _clearFilters,

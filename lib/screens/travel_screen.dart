@@ -213,71 +213,236 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
 
   Widget _buildActiveTab(InventoryProvider provider, TravelModel? travel) {
     if (travel == null) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.local_shipping_rounded, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text('No active travel trip', style: TextStyle(fontSize: 16, color: Colors.grey)),
-            Text('Start one from the "Start" tab', style: TextStyle(fontSize: 14, color: Colors.grey)),
+            Icon(Icons.local_shipping_rounded, size: 64, color: Colors.grey.withAlpha(80)),
+            const SizedBox(height: 16),
+            const Text('No active trip', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.grey)),
+            const SizedBox(height: 6),
+            const Text('Start one from the Start tab', style: TextStyle(fontSize: 13, color: Colors.grey)),
           ],
         ),
       );
     }
 
-    final loadedCount = travel.itemStatuses.where((s) => s.status == TravelStatus.loaded).length;
-    final unloadedCount = travel.itemStatuses.where((s) => s.status == TravelStatus.unloaded).length;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final verifiedCount = travel.itemStatuses.where((s) => s.status == TravelStatus.unloaded).length;
     final total = travel.itemStatuses.length;
+    final remaining = total - verifiedCount;
+    final allDone = verifiedCount == total && total > 0;
+    final progress = total == 0 ? 0.0 : verifiedCount / total;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Trip Header ──
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(8)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(travel.tripName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: allDone ? Colors.green.withAlpha(20) : Colors.orange.withAlpha(20),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        allDone ? 'Ready' : 'In Progress',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: allDone ? Colors.green : Colors.orange),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.circle, size: 6, color: isDark ? Colors.white30 : Colors.black26),
+                    const SizedBox(width: 8),
+                    Text(travel.fromLocation, style: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : Colors.black54)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Icon(Icons.arrow_forward_rounded, size: 14, color: isDark ? Colors.white30 : Colors.black26),
+                    ),
+                    Text(travel.toLocation, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: isDark ? Colors.white70 : Colors.black87)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Progress & Action Card ──
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(8)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Status header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 10, height: 10,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: allDone ? Colors.green : Colors.orange,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          allDone ? 'Verification Complete' : 'Verifying Boxes',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: isDark ? Colors.white : Colors.black87),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: (allDone ? Colors.green : AppTheme.primaryColor).withAlpha(15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${(progress * 100).toInt()}%',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: allDone ? Colors.green : AppTheme.primaryColor),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Progress bar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: isDark ? Colors.white.withAlpha(8) : Colors.black.withAlpha(6),
+                    color: allDone ? Colors.green : AppTheme.primaryColor,
+                    minHeight: 6,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Stats — label: value format
+                Row(
+                  children: [
+                    Expanded(
+                      child: _labelValueStat('Verified', '$verifiedCount', Colors.green, isDark),
+                    ),
+                    Container(width: 1, height: 36, color: isDark ? Colors.white.withAlpha(6) : Colors.black.withAlpha(5)),
+                    Expanded(
+                      child: _labelValueStat('Remaining', '$remaining', Colors.orange, isDark),
+                    ),
+                    Container(width: 1, height: 36, color: isDark ? Colors.white.withAlpha(6) : Colors.black.withAlpha(5)),
+                    Expanded(
+                      child: _labelValueStat('Total', '$total', isDark ? Colors.white54 : Colors.black45, isDark),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Box step indicators
+                SizedBox(
+                  height: 46,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: total,
+                    separatorBuilder: (_, __) => Container(
+                      width: 16, height: 1,
+                      margin: const EdgeInsets.only(top: 18),
+                      color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(8),
+                    ),
+                    itemBuilder: (ctx, i) {
+                      final isVerified = travel.itemStatuses[i].status == TravelStatus.unloaded;
+                      return Column(
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            width: 28, height: 28,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isVerified ? Colors.green : (isDark ? Colors.white.withAlpha(8) : Colors.black.withAlpha(6)),
+                              border: Border.all(
+                                color: isVerified ? Colors.green : (isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
+                                width: 2,
+                              ),
+                            ),
+                            child: isVerified
+                                ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+                                : Center(child: Text('${i + 1}', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: isDark ? Colors.white30 : Colors.black26))),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'B${i + 1}',
+                            style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: isVerified ? Colors.green : (isDark ? Colors.white24 : Colors.black26)),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Scan button
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: allDone ? null : () => _scanToUpdate(provider, travel, TravelStatus.unloaded),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: allDone ? Colors.green.withAlpha(15) : AppTheme.primaryColor,
+                      foregroundColor: allDone ? Colors.green : Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(allDone ? Icons.check_circle_rounded : Icons.qr_code_scanner_rounded, size: 20),
+                        const SizedBox(width: 10),
+                        Text(
+                          allDone ? 'All Verified' : 'Scan QR to Verify',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Checklist ──
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(travel.tripName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
-                  Text('${travel.fromLocation} → ${travel.toLocation}', style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: Colors.blue.withAlpha(20), borderRadius: BorderRadius.circular(8)),
-                child: const Text('In Progress', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
-              ),
+              const Text('Boxes', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              Text('Tap to check manually', style: TextStyle(fontSize: 11, color: isDark ? Colors.white30 : Colors.black26)),
             ],
           ),
-          const SizedBox(height: 20),
-          _buildProgressCard(loadedCount, unloadedCount, total),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _scanToUpdate(provider, travel, TravelStatus.loaded),
-                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 24),
-                  label: const Text('Scan Load', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, elevation: 0, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _scanToUpdate(provider, travel, TravelStatus.unloaded),
-                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 24),
-                  label: const Text('Scan Unload', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 0, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          const Text('Checklist', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           ListView.builder(
             shrinkWrap: true,
@@ -285,23 +450,29 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
             itemCount: travel.itemStatuses.length,
             itemBuilder: (ctx, i) {
               final item = travel.itemStatuses[i];
-              final boxModel = provider.boxes.firstWhereOrNull((b) => b.id == item.boxId) 
-                  ?? _newTripBoxes.firstWhereOrNull((b) => b.id == item.boxId); // Fallback for temp boxes
+              final boxModel = provider.boxes.firstWhereOrNull((b) => b.id == item.boxId)
+                  ?? _newTripBoxes.firstWhereOrNull((b) => b.id == item.boxId);
               return _buildTravelBoxTile(provider, travel.id, item, boxModel);
             },
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+
+          // ── Complete Trip ──
           SizedBox(
             width: double.infinity,
-            height: 56,
+            height: 54,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
+                backgroundColor: allDone ? Colors.green : (isDark ? Colors.white.withAlpha(8) : Colors.black.withAlpha(6)),
+                foregroundColor: allDone ? Colors.white : (isDark ? Colors.white38 : Colors.black26),
+                elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
-              onPressed: () => _confirmEndTravel(provider, travel),
-              child: const Text('Complete Trip & Update Locations', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              onPressed: allDone ? () => _confirmEndTravel(provider, travel) : null,
+              child: Text(
+                allDone ? 'Complete Trip' : 'Verify all boxes to complete',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+              ),
             ),
           ),
           const SizedBox(height: 40),
@@ -310,59 +481,18 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildProgressCard(int loaded, int unloaded, int total) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.withAlpha(51)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha(12), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Trip Progress', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              Text('$unloaded / $total Unloaded', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: total == 0 ? 0 : unloaded / total,
-              backgroundColor: Colors.grey.withAlpha(51),
-              color: Colors.green,
-              minHeight: 8,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _progressStat('Loaded', '$loaded/$total', Colors.orange),
-              _progressStat('Unloaded', '$unloaded/$total', Colors.green),
-              _progressStat('Missing', '${total - loaded}', Colors.red),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _progressStat(String label, String value, Color color) {
+  Widget _labelValueStat(String label, String value, Color color, bool isDark) {
     return Column(
       children: [
-        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500)),
+        Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: color)),
+        const SizedBox(height: 2),
+        Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isDark ? Colors.white38 : Colors.black38)),
       ],
     );
   }
+
+
+
 
   Widget _buildTravelBoxTile(InventoryProvider provider, String travelId, TravelItemStatus status, BoxModel? box) {
     IconData statusIcon;

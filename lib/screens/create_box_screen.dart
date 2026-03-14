@@ -25,7 +25,7 @@ class _CreateBoxScreenState extends State<CreateBoxScreen>
   ];
   
   final List<String> _categories = [
-    'Clothing', 'Tools', 'Documents', 'Kitchen', 'Electronics', 'Other'
+    'Clothing', 'Tools', 'Documents', 'Kitchen', 'Electronics', 'Other', 'Add Custom...'
   ];
 
   late int _randomColorIndex;
@@ -232,8 +232,20 @@ class _CreateBoxScreenState extends State<CreateBoxScreen>
                             DropdownButtonFormField<String>(
                               value: _selectedCategory,
                               decoration: const InputDecoration(prefixIcon: Icon(Icons.category_outlined)),
-                              items: _categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
-                              onChanged: (val) { if (val != null) setState(() => _selectedCategory = val); },
+                              items: _categories.map((cat) => DropdownMenuItem(
+                                value: cat, 
+                                child: Text(cat, style: TextStyle(
+                                  color: cat == 'Add Custom...' ? AppTheme.primaryColor : null,
+                                  fontWeight: cat == 'Add Custom...' ? FontWeight.bold : null,
+                                )),
+                              )).toList(),
+                              onChanged: (val) {
+                                if (val == 'Add Custom...') {
+                                  _showCustomCategoryDialog();
+                                } else if (val != null) {
+                                  setState(() => _selectedCategory = val);
+                                }
+                              },
                             ),
                           ],
                         ),
@@ -277,21 +289,265 @@ class _CreateBoxScreenState extends State<CreateBoxScreen>
     );
   }
 
-  void _createBox() {
+  void _showCustomCategoryDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Custom Category', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: controller,
+          textCapitalization: TextCapitalization.words,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'e.g. Hobby Gear',
+            labelText: 'Category Name',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final val = controller.text.trim();
+              if (val.isNotEmpty) {
+                setState(() {
+                  // Add to list before "Add Custom..."
+                  if (!_categories.contains(val)) {
+                    _categories.insert(_categories.length - 1, val);
+                  }
+                  _selectedCategory = val;
+                });
+              }
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Add'),
+          ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Box Name
+                  const Text(
+                    'Box Name',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _nameController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. Festival Clothes',
+                      prefixIcon: Icon(Icons.inventory_2_outlined),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a box name';
+                      }
+                      return null;
+                    },
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 20),
+
+                  const Text(
+                    'Location (Hierarchy)',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Autocomplete<String>(
+                    optionsBuilder: (textEditingValue) {
+                      if (textEditingValue.text.isEmpty) return const Iterable<String>.empty();
+                      return _locationSuggestions.where((option) => option.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                    },
+                    onSelected: (selection) => _locationController.text = selection,
+                    fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                      if (controller.text.isEmpty && _locationController.text.isNotEmpty) {
+                        controller.text = _locationController.text;
+                      }
+                      return TextFormField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: const InputDecoration(
+                          hintText: 'e.g. House > Bedroom > Closet',
+                          prefixIcon: Icon(Icons.location_on_outlined),
+                        ),
+                        onChanged: (v) => _locationController.text = v,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return 'Please enter a location';
+                          return null;
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Capacity (Max Items)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _capacityController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(hintText: '0 = unlimited', prefixIcon: Icon(Icons.speed_rounded)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Category', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: _selectedCategory,
+                              decoration: const InputDecoration(prefixIcon: Icon(Icons.category_outlined)),
+                              items: _categories.map((cat) => DropdownMenuItem(
+                                value: cat, 
+                                child: Text(cat, style: TextStyle(
+                                  color: cat == 'Add Custom...' ? AppTheme.primaryColor : null,
+                                  fontWeight: cat == 'Add Custom...' ? FontWeight.bold : null,
+                                )),
+                              )).toList(),
+                              onChanged: (val) {
+                                if (val == 'Add Custom...') {
+                                  _showCustomCategoryDialog();
+                                } else if (val != null) {
+                                  setState(() => _selectedCategory = val);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 40),
+
+                  // Create Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _createBox,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: selectedColor,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_rounded, size: 24),
+                          SizedBox(width: 8),
+                          Text(
+                            'Create Box',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCustomCategoryDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Custom Category', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: controller,
+          textCapitalization: TextCapitalization.words,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'e.g. Hobby Gear',
+            labelText: 'Category Name',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final val = controller.text.trim();
+              if (val.isNotEmpty) {
+                setState(() {
+                  // Add to list before "Add Custom..."
+                  if (!_categories.contains(val)) {
+                    _categories.insert(_categories.length - 1, val);
+                  }
+                  _selectedCategory = val;
+                });
+              }
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _createBox() async {
     if (_formKey.currentState!.validate()) {
-      final provider = context.read<InventoryProvider>();
-      provider.addBox(
+      final provider = Provider.of<InventoryProvider>(context, listen: false);
+      
+      await provider.addBox(
         name: _nameController.text.trim(),
         location: _locationController.text.trim(),
         category: _selectedCategory,
-        colorValue: AppTheme.boxColors[_randomColorIndex].toARGB32(),
+        colorValue: AppTheme.boxColors[_randomColorIndex].value,
         capacity: int.tryParse(_capacityController.text) ?? 0,
       );
-
+      
+      if (!mounted) return;
       Navigator.pop(context);
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${_nameController.text.trim()} created! 📦'),
+          content: Text('Box "${_nameController.text.trim()}" created!'),
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }

@@ -98,16 +98,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildThemeColorTile(context, provider),
                    ]),
 
-                   _buildSectionHeader('ACTIVITY & LOGS'),
-                   _buildSectionCard([
-                    _buildSettingTile(
-                      title: 'View Activity History',
-                      subtitle: '',
-                      icon: Icons.history_rounded,
-                      iconColor: Colors.blueAccent,
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen())),
-                    ),
-                   ]),
 
                    _buildSectionHeader('DATA & CLOUD'),
                    _buildSectionCard([

@@ -112,103 +112,189 @@ class _BoxesScreenState extends State<BoxesScreen> {
                 snap: true,
                 pinned: true,
                 elevation: 0,
+                expandedHeight: 70,
                 backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                title: _isSearching 
-                  ? TextField(
-                      controller: _searchCtrl,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        hintText: 'Search boxes, items, locations...',
-                        border: InputBorder.none,
-                      ),
-                      style: const TextStyle(fontSize: 16),
-                      onChanged: (_) => setState(() {}),
-                    )
-                  : const Text('Boxes', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-                actions: [
-                  IconButton(
-                    icon: Icon(_isSearching ? Icons.close_rounded : Icons.search_rounded),
-                    onPressed: () => setState(() {
-                      _isSearching = !_isSearching;
-                      if (!_isSearching) _searchCtrl.clear();
-                    }),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.tune_rounded),
-                    onPressed: () {
-                      // Optionally open a more detailed filter sheet, 
-                      // but we have quick filters below. Let's just scroll to the filters for now.
-                      _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-                    },
-                  ),
-                  const SizedBox(width: 8),
+                title: const Text('Boxes', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                actions: const [
+                  SizedBox(width: 8),
                 ],
               ),
 
-              // Filter Bar
+              // Professional Search Bar
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDropdown(
-                              label: 'Filter',
-                              value: _selectedLocation,
-                              items: ['All', ...provider.allLocations],
-                              onChanged: (val) => setState(() => _selectedLocation = val!),
-                              isDark: isDark,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildDropdown(
-                              label: 'Sort',
-                              value: _sortBy,
-                              items: [
-                                'Recently Added', 
-                                'Oldest First', 
-                                'Name A-Z', 
-                                'Name Z-A', 
-                                'Item Count (High)', 
-                                'Item Count (Low)'
-                              ],
-                              onChanged: (val) => setState(() => _sortBy = val!),
-                              isDark: isDark,
-                            ),
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() => _isSearching = true);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: _isSearching 
+                            ? AppTheme.primaryColor.withAlpha(100) 
+                            : (isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10))),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _isSearching 
+                                ? AppTheme.primaryColor.withAlpha(15) 
+                                : Colors.black.withAlpha(isDark ? 15 : 5),
+                            blurRadius: 20,
+                            offset: const Offset(0, 6),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withAlpha(10),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.layers_rounded, size: 14, color: AppTheme.primaryColor),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Showing 1–${visibleBoxes.length} of ${allFiltered.length} boxes',
-                              style: TextStyle(
-                                fontSize: 12, 
-                                fontWeight: FontWeight.w800, 
-                                color: AppTheme.primaryColor,
-                                letterSpacing: 0.2,
+                      child: Row(
+                        children: [
+                          Icon(Icons.search_rounded, size: 22, color: _isSearching ? AppTheme.primaryColor : (isDark ? Colors.white38 : Colors.black38)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _isSearching
+                                ? TextField(
+                                    controller: _searchCtrl,
+                                    autofocus: true,
+                                    style: const TextStyle(fontSize: 15),
+                                    decoration: InputDecoration(
+                                      hintText: 'Search boxes, items, locations...',
+                                      hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.black26, fontWeight: FontWeight.w400),
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                                    ),
+                                    onChanged: (_) => setState(() {}),
+                                  )
+                                : Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    child: Text(
+                                      'Search boxes, items, locations...',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w400,
+                                        color: isDark ? Colors.white30 : Colors.black26,
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                          if (_isSearching && _searchCtrl.text.isNotEmpty)
+                            GestureDetector(
+                              onTap: () => setState(() { _searchCtrl.clear(); }),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(8),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(Icons.close_rounded, size: 16, color: isDark ? Colors.white54 : Colors.black45),
                               ),
                             ),
-                          ],
+                          if (_isSearching && _searchCtrl.text.isEmpty)
+                            GestureDetector(
+                              onTap: () => setState(() { _isSearching = false; _searchCtrl.clear(); }),
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: Text('Cancel', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Compact Filter Bar
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                  child: Row(
+                    children: [
+                      // Location filter pill
+                      GestureDetector(
+                        onTap: () => _showLocationPicker(context, provider, isDark),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _selectedLocation != 'All'
+                                ? AppTheme.primaryColor
+                                : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: _selectedLocation != 'All'
+                                ? AppTheme.primaryColor
+                                : (isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10))),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.location_on_rounded, size: 14,
+                                color: _selectedLocation != 'All' ? Colors.white : (isDark ? Colors.white54 : Colors.black45)),
+                              const SizedBox(width: 6),
+                              Text(
+                                _selectedLocation == 'All' ? 'Location' : _selectedLocation,
+                                style: TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.w700,
+                                  color: _selectedLocation != 'All' ? Colors.white : (isDark ? Colors.white54 : Colors.black54),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(Icons.keyboard_arrow_down_rounded, size: 16,
+                                color: _selectedLocation != 'All' ? Colors.white70 : (isDark ? Colors.white30 : Colors.black26)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Sort pill
+                      GestureDetector(
+                        onTap: () => _showSortPicker(context, isDark),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.sort_rounded, size: 14, color: isDark ? Colors.white54 : Colors.black45),
+                              const SizedBox(width: 6),
+                              Text(
+                                _sortBy.length > 12 ? '${_sortBy.substring(0, 12)}…' : _sortBy,
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: isDark ? Colors.white54 : Colors.black54),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: isDark ? Colors.white30 : Colors.black26),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
+
+              // Active filter tag (dismissible)
+              if (_selectedLocation != 'All' || _searchCtrl.text.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                    child: Wrap(
+                      spacing: 8,
+                      children: [
+                        if (_selectedLocation != 'All')
+                          _activeFilterTag(_selectedLocation, () => setState(() => _selectedLocation = 'All'), isDark),
+                        if (_searchCtrl.text.isNotEmpty)
+                          _activeFilterTag('"${_searchCtrl.text}"', () => setState(() => _searchCtrl.clear()), isDark),
+                      ],
+                    ),
+                  ),
+                ),
 
               if (allFiltered.isEmpty)
                 SliverFillRemaining(
@@ -266,26 +352,16 @@ class _BoxesScreenState extends State<BoxesScreen> {
                 ),
                 
                 // Pagination Info
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Showing ${visibleBoxes.length} of ${allFiltered.length} boxes',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.white38 : Colors.black38),
-                        ),
-                        if (visibleBoxes.length < allFiltered.length) ...[
-                          const SizedBox(height: 12),
-                          TextButton(
-                            onPressed: () => setState(() => _loadedCount += 10),
-                            child: const Text('Load More'),
-                          ),
-                        ],
-                      ],
+                if (visibleBoxes.length < allFiltered.length)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: TextButton(
+                        onPressed: () => setState(() => _loadedCount += 10),
+                        child: const Text('Load More', style: TextStyle(fontWeight: FontWeight.w700)),
+                      ),
                     ),
                   ),
-                ),
               ],
             ],
           ),
@@ -301,41 +377,144 @@ class _BoxesScreenState extends State<BoxesScreen> {
     );
   }
 
-  Widget _buildDropdown({
-    required String label,
-    required String value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-    required bool isDark,
-  }) {
+  void _showLocationPicker(BuildContext context, InventoryProvider provider, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F172A) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Location', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Icon(Icons.close_rounded, color: isDark ? Colors.white54 : Colors.black38),
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(8)),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                children: [
+                  _locationItem('All', 'All', ctx, isDark),
+                  ...provider.allLocations.map((loc) => _locationItem(loc, loc, ctx, isDark)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _locationItem(String label, String value, BuildContext ctx, bool isDark) {
+    final isSelected = _selectedLocation == value;
+    return ListTile(
+      onTap: () {
+        setState(() => _selectedLocation = value);
+        Navigator.pop(ctx);
+      },
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+      leading: Icon(
+        isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+        size: 20,
+        color: isSelected ? AppTheme.primaryColor : (isDark ? Colors.white30 : Colors.black26),
+      ),
+      title: Text(label, style: TextStyle(
+        fontSize: 14,
+        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+        color: isSelected ? AppTheme.primaryColor : null,
+      )),
+    );
+  }
+
+  void _showSortPicker(BuildContext context, bool isDark) {
+    final sorts = ['Recently Added', 'Oldest First', 'Name A-Z', 'Name Z-A', 'Item Count (High)', 'Item Count (Low)'];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F172A) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Sort by', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Icon(Icons.close_rounded, color: isDark ? Colors.white54 : Colors.black38),
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(8)),
+            ...sorts.map((s) {
+              final isSelected = _sortBy == s;
+              return ListTile(
+                onTap: () {
+                  setState(() => _sortBy = s);
+                  Navigator.pop(ctx);
+                },
+                dense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+                leading: Icon(
+                  isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  size: 20,
+                  color: isSelected ? AppTheme.primaryColor : (isDark ? Colors.white30 : Colors.black26),
+                ),
+                title: Text(s, style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                  color: isSelected ? AppTheme.primaryColor : null,
+                )),
+              );
+            }),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _activeFilterTag(String label, VoidCallback onRemove, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isDark ? Colors.white.withAlpha(20) : Colors.black.withAlpha(10)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 20 : 5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+        color: AppTheme.primaryColor.withAlpha(15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.primaryColor.withAlpha(30)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.primaryColor)),
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: onRemove,
+            child: const Icon(Icons.close_rounded, size: 14, color: AppTheme.primaryColor),
           ),
         ],
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isExpanded: true,
-          icon: Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: AppTheme.primaryColor),
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: isDark ? Colors.white : Colors.black87),
-          onChanged: onChanged,
-          items: items.map((String item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item, overflow: TextOverflow.ellipsis),
-            );
-          }).toList(),
-        ),
       ),
     );
   }

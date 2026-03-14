@@ -57,6 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         index: _currentIndex,
         children: const [
           _HomeTab(),
+          SearchScreen(),
           BoxesScreen(),
           SettingsScreen(),
         ],
@@ -188,6 +189,10 @@ class _DashboardScreenState extends State<DashboardScreen>
               NavigationDestination(
                 icon: const Icon(Icons.dashboard_rounded),
                 label: provider.translate('Home'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.search_rounded),
+                label: provider.translate('Search'),
               ),
               NavigationDestination(
                 icon: const Icon(Icons.grid_view_rounded),
@@ -439,23 +444,24 @@ class _HomeTab extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: Center(
+                  padding: const EdgeInsets.only(right: 14),
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
                     child: Container(
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withAlpha(20),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: TextButton.icon(
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
-                        icon: const Icon(Icons.person_rounded, size: 24),
-                        label: const SizedBox.shrink(),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppTheme.primaryColor,
-                          padding: const EdgeInsets.all(12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [AppTheme.primaryColor, AppTheme.primaryColor.withAlpha(180)],
                         ),
+                        boxShadow: [
+                          BoxShadow(color: AppTheme.primaryColor.withAlpha(60), blurRadius: 12, offset: const Offset(0, 4)),
+                        ],
                       ),
+                      child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
                     ),
                   ),
                 ),
@@ -464,24 +470,25 @@ class _HomeTab extends StatelessWidget {
 
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _getGreeting(),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white54 : Colors.black54,
+                      '${_getGreeting()} 👋',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                    const Text(
-                      'Welcome Home',
+                    const SizedBox(height: 2),
+                    Text(
+                      'Everything organized, always.',
                       style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -1,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white38 : Colors.black38,
                       ),
                     ),
                   ],
@@ -495,35 +502,6 @@ class _HomeTab extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        final dashboard = context.findAncestorStateOfType<_DashboardScreenState>();
-                        if (dashboard != null) {
-                          dashboard.setState(() => dashboard._currentIndex = 3);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: isDark ? Colors.white.withAlpha(20) : Colors.black.withAlpha(10)),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withAlpha(isDark ? 30 : 8), blurRadius: 10, offset: const Offset(0, 4)),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.search_rounded, color: isDark ? AppTheme.primaryColor.withAlpha(200) : AppTheme.primaryColor),
-                            const SizedBox(width: 16),
-                            Text('Search your inventory...', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 16, fontWeight: FontWeight.w500)),
-                            const Spacer(),
-                            Icon(Icons.tune_rounded, size: 20, color: isDark ? Colors.white24 : Colors.black26),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
 
                     _sectionHeader(
                       context, 
@@ -533,7 +511,7 @@ class _HomeTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: 150,
+                      height: 160,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
@@ -553,25 +531,38 @@ class _HomeTab extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    const Text('Quick Hub', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                    _sectionHeader(context, 'Quick Hub'),
                     const SizedBox(height: 16),
-                    GridView.count(
-                      crossAxisCount: 3,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 1.0, // perfect squares
+                    Row(
                       children: [
-                        _buildactionTile(context, 'Travel', Icons.local_shipping_rounded, Colors.indigo, () {
+                        Expanded(child: _buildQuickHubCard(context, 'Add Box', Icons.add_box_rounded, Colors.teal, () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
+                        })),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildQuickHubCard(context, 'Add Item', Icons.add_circle_rounded, Colors.deepPurple, () {
+                          final provider = context.read<InventoryProvider>();
+                          _showAddItemListDialog(context, provider);
+                        })),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildQuickHubCard(context, 'All Features', Icons.apps_rounded, Colors.blueGrey, () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const FeatureCenterScreen()));
+                        })),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: _buildQuickHubCard(context, 'Travel', Icons.local_shipping_rounded, Colors.indigo, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const TravelScreen()));
-                        }),
-                        _buildactionTile(context, 'Shopping', Icons.shopping_cart_rounded, Colors.orange, () {
+                        })),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildQuickHubCard(context, 'Shopping', Icons.shopping_cart_rounded, Colors.orange, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingListScreen()));
-                        }),
-                        _buildactionTile(context, 'Planner', Icons.task_alt_rounded, Colors.blue, () {
+                        })),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildQuickHubCard(context, 'Planner', Icons.task_alt_rounded, Colors.blue, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen()));
-                        }),
+                        })),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -610,17 +601,17 @@ class _HomeTab extends StatelessWidget {
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.75,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
+                    childAspectRatio: 0.78,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final box = provider.boxes[index];
                       return Hero(
-                        tag: 'box_${box.id}',
+                        tag: 'home_box_${box.id}',
                         child: BoxCard(
                           name: box.name?.toString() ?? 'Unnamed Box',
                           location: box.location?.toString() ?? 'Unknown',
@@ -641,26 +632,40 @@ class _HomeTab extends StatelessWidget {
                         ),
                       );
                     },
-                    childCount: provider.boxes.length > 10 ? 10 : provider.boxes.length,
+                    childCount: _boxGridCount(provider.boxes.length, MediaQuery.of(context).size.width > 600 ? 4 : 2),
                   ),
                 ),
               ),
-              if (provider.boxes.length > 10)
+              if (provider.boxes.length > _boxGridCount(provider.boxes.length, MediaQuery.of(context).size.width > 600 ? 4 : 2))
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    padding: const EdgeInsets.symmetric(vertical: 20),
                     child: Center(
-                      child: TextButton.icon(
-                        onPressed: () {
+                      child: GestureDetector(
+                        onTap: () {
                           final dashboard = context.findAncestorStateOfType<_DashboardScreenState>();
                           if (dashboard != null) {
-                            dashboard.setState(() => dashboard._currentIndex = 1);
+                            dashboard.setState(() => dashboard._currentIndex = 2);
                           }
                         },
-                        icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-                        label: Text(
-                          'Showing 1–10 of ${provider.boxes.length} boxes • View All',
-                          style: TextStyle(fontWeight: FontWeight.w800, color: AppTheme.primaryColor),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withAlpha(15),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: AppTheme.primaryColor.withAlpha(40)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'View All ${provider.boxes.length} Boxes',
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppTheme.primaryColor),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.arrow_forward_rounded, size: 16, color: AppTheme.primaryColor),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -673,6 +678,15 @@ class _HomeTab extends StatelessWidget {
         );
       },
     );
+  }
+
+  /// Returns how many boxes to show: always a multiple of [cols], capped at 4.
+  int _boxGridCount(int total, int cols) {
+    if (total <= 0) return 0;
+    if (total <= cols) return total;        // 1-2 (or 1-4 on wide screens)
+    final maxShow = 4;
+    final capped = total > maxShow ? maxShow : total;
+    return (capped ~/ cols) * cols;          // round down to even row
   }
 
   Widget _buildHorizontalStatCard(BuildContext context, String title, String value, IconData icon, Color color) {
@@ -730,44 +744,43 @@ class _HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildactionTile(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildQuickHubCard(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isDark ? Colors.white.withAlpha(10) : color.withAlpha(20)),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isDark ? Colors.white.withAlpha(10) : color.withAlpha(25)),
             boxShadow: [
               BoxShadow(
-                color: color.withAlpha(isDark ? 5 : 12),
-                blurRadius: 16,
-                spreadRadius: 1,
-                offset: const Offset(0, 6),
+                color: color.withAlpha(isDark ? 8 : 15),
+                blurRadius: 20,
+                spreadRadius: 0,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: Row(
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withAlpha(15),
-                  shape: BoxShape.circle,
+                  color: color.withAlpha(20),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: color, size: 22),
+                child: Icon(icon, color: color, size: 24),
               ),
-              const SizedBox(width: 10),
-              Flexible(
-                child: Text(
-                  label,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                  overflow: TextOverflow.ellipsis,
-                ),
+              const SizedBox(height: 10),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               ),
             ],
           ),

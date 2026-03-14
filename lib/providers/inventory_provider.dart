@@ -41,7 +41,7 @@ class InventoryProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _scanHistory = [];
   List<Map<String, String>> _collaborators = [];
   List<Map<String, dynamic>> _plannerTasks = [];
-  final List<Map<String, dynamic>> _manualShoppingList = [];
+  List<Map<String, dynamic>> _manualShoppingList = [];
   List<TravelModel> _travelLogs = [];
   TravelModel? _activeTravel;
 
@@ -150,21 +150,112 @@ class InventoryProvider extends ChangeNotifier {
       _boxes.fold(0, (sum, box) => sum + box.totalQuantity);
 
   void addToShoppingList(BoxModel box, [ItemModel? item]) {
-    final exists = _manualShoppingList.any((e) => e['box'].id == box.id && (item == null || e['item']?.id == item.id));
+    final exists = _manualShoppingList.any((e) => 
+      e['type'] == 'inventory' && 
+      e['box'].id == box.id && 
+      (item == null || e['item']?.id == item.id)
+    );
     if (!exists) {
-      _manualShoppingList.add({'box': box, 'item': item});
+      _manualShoppingList.add({
+        'id': _uuid.v4(),
+        'type': 'inventory',
+        'box': box,
+        'item': item,
+        'timestamp': DateTime.now(),
+      });
+      _persistShoppingList();
       notifyListeners();
     }
   }
 
+  void addCustomToShoppingList(String name) {
+    if (name.trim().isEmpty) return;
+    _manualShoppingList.add({
+      'id': _uuid.v4(),
+      'type': 'custom',
+      'name': name.trim(),
+      'timestamp': DateTime.now(),
+    });
+    _persistShoppingList();
+    notifyListeners();
+  }
+
+  void removeFromShoppingListById(String id) {
+    _manualShoppingList.removeWhere((e) => e['id'] == id);
+    _persistShoppingList();
+    notifyListeners();
+  }
+
   void removeFromShoppingList(String boxId, [String? itemId]) {
-    _manualShoppingList.removeWhere((e) => e['box'].id == boxId && (itemId == null || e['item']?.id == itemId));
+    _manualShoppingList.removeWhere((e) => 
+      e['type'] == 'inventory' && 
+      e['box'].id == boxId && 
+      (itemId == null || e['item']?.id == itemId)
+    );
+    _persistShoppingList();
     notifyListeners();
   }
 
   void clearShoppingList() {
     _manualShoppingList.clear();
+    _persistShoppingList();
     notifyListeners();
+  }
+
+  Future<void> _persistShoppingList() async {
+    // We store minimal info to recreate the entries
+    final data = _manualShoppingList.map((e) {
+      if (e['type'] == 'inventory') {
+        return {
+          'type': 'inventory',
+          'boxId': e['box'].id,
+          'itemId': e['item']?.id,
+          'timestamp': e['timestamp']?.toIso8601String(),
+        };
+      } else {
+        return {
+          'type': 'custom',
+          'name': e['name'],
+          'timestamp': e['timestamp']?.toIso8601String(),
+        };
+      }
+    }).toList();
+    await DatabaseService.setSetting('manual_shopping_list', data);
+  }
+
+  Future<void> _loadShoppingList() async {
+    final raw = await DatabaseService.getSetting('manual_shopping_list', defaultValue: []);
+    if (raw is List) {
+      final List<Map<String, dynamic>> list = [];
+      for (final entry in raw) {
+        if (entry is Map) {
+          if (entry['type'] == 'inventory') {
+            final boxId = entry['boxId'];
+            final itemId = entry['itemId'];
+            final box = findBoxById(boxId);
+            if (box != null) {
+              final item = itemId != null ? box.items.firstWhereOrNull((i) => i.id == itemId) : null;
+              list.add({
+                'id': _uuid.v4(),
+                'type': 'inventory',
+                'box': box,
+                'item': item,
+                'timestamp': entry['timestamp'] != null ? DateTime.tryParse(entry['timestamp']) : null,
+              });
+            }
+          } else if (entry['type'] == 'custom') {
+            list.add({
+              'id': _uuid.v4(),
+              'type': 'custom',
+              'name': entry['name'],
+              'timestamp': entry['timestamp'] != null ? DateTime.tryParse(entry['timestamp']) : null,
+            });
+          }
+        }
+      }
+      _manualShoppingList = list;
+      notifyListeners();
+    }
   }
 
 
@@ -300,6 +391,7 @@ class InventoryProvider extends ChangeNotifier {
     await _loadPlannerTasks();
     await generateSmartPlannerTasks();
     await loadTravelLogs();
+    await _loadShoppingList();
     notifyListeners();
   }
 
