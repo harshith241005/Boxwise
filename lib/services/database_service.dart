@@ -17,7 +17,7 @@ class DatabaseService {
 
     _db = await openDatabase(
       path,
-      version: 5,
+      version: 8,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute('ALTER TABLE boxes ADD COLUMN uuid TEXT');
@@ -52,6 +52,46 @@ class DatabaseService {
               isCompleted INTEGER
             )
           ''');
+        }
+        if (oldVersion < 6) {
+          await db.execute('''
+            CREATE TABLE travel_sessions (
+              id TEXT PRIMARY KEY,
+              trip_name TEXT,
+              from_location TEXT,
+              to_location TEXT,
+              start_time TEXT,
+              end_time TEXT,
+              status TEXT,
+              notes TEXT
+            )
+          ''');
+          
+          await db.execute('''
+            CREATE TABLE travel_boxes (
+              session_id TEXT,
+              box_id TEXT,
+              status TEXT,
+              FOREIGN KEY(session_id) REFERENCES travel_sessions(id) ON DELETE CASCADE,
+              FOREIGN KEY(box_id) REFERENCES boxes(id) ON DELETE CASCADE
+            )
+          ''');
+        }
+        if (oldVersion < 7) {
+          await db.execute('''
+            CREATE TABLE travel_items (
+              session_id TEXT,
+              box_id TEXT,
+              item_id TEXT,
+              status TEXT,
+              FOREIGN KEY(session_id) REFERENCES travel_sessions(id) ON DELETE CASCADE,
+              FOREIGN KEY(box_id) REFERENCES travel_boxes(box_id) ON DELETE CASCADE,
+              FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
+            )
+          ''');
+        }
+        if (oldVersion < 8) {
+          await db.execute('ALTER TABLE travel_items ADD COLUMN item_name TEXT');
         }
       },
       onCreate: (db, version) async {
@@ -155,16 +195,28 @@ class DatabaseService {
           )
         ''');
 
-        // Travel Logs Table
+        // Travel Sessions Table
         await db.execute('''
-          CREATE TABLE travel_logs (
+          CREATE TABLE travel_sessions (
             id TEXT PRIMARY KEY,
-            name TEXT,
-            fromLocation TEXT,
-            toLocation TEXT,
-            timestamp TEXT,
-            itemStatuses TEXT,
-            isCompleted INTEGER
+            trip_name TEXT,
+            from_location TEXT,
+            to_location TEXT,
+            start_time TEXT,
+            end_time TEXT,
+            status TEXT,
+            notes TEXT
+          )
+        ''');
+
+        // Travel Boxes Table
+        await db.execute('''
+          CREATE TABLE travel_boxes (
+            session_id TEXT,
+            box_id TEXT,
+            status TEXT,
+            FOREIGN KEY(session_id) REFERENCES travel_sessions(id) ON DELETE CASCADE,
+            FOREIGN KEY(box_id) REFERENCES boxes(id) ON DELETE CASCADE
           )
         ''');
       },
@@ -343,20 +395,93 @@ class DatabaseService {
 
   // --- Travel Logs ---
   static Future<List<TravelModel>> getAllTravelLogs() async {
-    final maps = await db.query('travel_logs', orderBy: 'timestamp DESC');
-    return maps.map((e) => TravelModel.fromMap(e)).toList();
+    final sessions = await db.query('travel_sessions', orderBy: 'start_time DESC');
+    final List<TravelModel> models = [];
+
+    for (var session in sessions) {
+      final sessionId = session['id'] as String;
+      final boxesMap = await db.rawQuery('''
+        SELECT tb.box_id, tb.status, b.name as boxName, b.location as location
+        FROM travel_boxes tb
+        LEFT JOIN boxes b ON tb.box_id = b.id
+        WHERE tb.session_id = ?
+      ''', [sessionId]);
+
+      final itemsMap = await db.rawQuery('''
+        SELECT box_id, item_id, item_name, status
+        FROM travel_items
+        WHERE session_id = ?
+      ''', [sessionId]);
+
+      final items = boxesMap.map((b) {
+        final boxId = b['box_id'] as String;
+        final boxItems = itemsMap.where((i) => i['box_id'] == boxId);
+        
+        final List<TravelItemDetail> itemStatuses = [];
+        for (var i in boxItems) {
+            final tStat = TravelStatus.values.firstWhere(
+                (e) => e.name == (i['status'] ?? 'pending'),
+                orElse: () => TravelStatus.pending,
+            );
+            itemStatuses.add(TravelItemDetail(
+                id: i['item_id'] as String,
+                name: (i['item_name'] as String?) ?? 'Unnamed',
+                status: tStat,
+            ));
+        }
+
+        return TravelItemStatus.fromMap(
+          b, 
+          boxName: b['boxName'] as String?, 
+          location: b['location'] as String?,
+          items: itemStatuses,
+        );
+      }).toList();
+      
+      models.add(TravelModel.fromSessionMap(session, items));
+    }
+
+    return models;
   }
 
   static Future<void> addTravelLog(TravelModel log) async {
-    await db.insert('travel_logs', log.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert('travel_sessions', log.toSessionMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    for (var item in log.itemStatuses) {
+      await db.insert('travel_boxes', item.toMap(log.id), conflictAlgorithm: ConflictAlgorithm.replace);
+      for (var detail in item.itemStatuses) {
+        await db.insert('travel_items', {
+          'session_id': log.id,
+          'box_id': item.boxId,
+          'item_id': detail.id,
+          'item_name': detail.name,
+          'status': detail.status.name,
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    }
   }
 
   static Future<void> updateTravelLog(TravelModel log) async {
-    await db.update('travel_logs', log.toMap(), where: 'id = ?', whereArgs: [log.id]);
+    await db.update('travel_sessions', log.toSessionMap(), where: 'id = ?', whereArgs: [log.id]);
+    await db.delete('travel_boxes', where: 'session_id = ?', whereArgs: [log.id]);
+    await db.delete('travel_items', where: 'session_id = ?', whereArgs: [log.id]);
+    for (var item in log.itemStatuses) {
+      await db.insert('travel_boxes', item.toMap(log.id), conflictAlgorithm: ConflictAlgorithm.replace);
+      for (var detail in item.itemStatuses) {
+        await db.insert('travel_items', {
+          'session_id': log.id,
+          'box_id': item.boxId,
+          'item_id': detail.id,
+          'item_name': detail.name,
+          'status': detail.status.name,
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    }
   }
 
   static Future<void> deleteTravelLog(String id) async {
-    await db.delete('travel_logs', where: 'id = ?', whereArgs: [id]);
+    await db.delete('travel_items', where: 'session_id = ?', whereArgs: [id]);
+    await db.delete('travel_boxes', where: 'session_id = ?', whereArgs: [id]);
+    await db.delete('travel_sessions', where: 'id = ?', whereArgs: [id]);
   }
 
   static Future<void> resetAllData() async {
@@ -368,6 +493,8 @@ class DatabaseService {
     await db.delete('activity_logs');
     await db.delete('settings');
     await db.delete('lending_logs');
-    await db.delete('travel_logs');
+    await db.delete('travel_sessions');
+    await db.delete('travel_boxes');
+    await db.delete('travel_items');
   }
 }

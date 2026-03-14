@@ -169,7 +169,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDark ? Colors.white.withAlpha(13) : Colors.grey.withAlpha(20),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(color: isDark ? Colors.white.withAlpha(20) : Colors.black.withAlpha(13)),
         ),
         child: Row(children: [
@@ -374,7 +374,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 height: _selectedImage != null ? 200 : 120,
                 decoration: BoxDecoration(
                   color: isDark ? Colors.white.withAlpha(13) : Colors.grey.withAlpha(20),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: _selectedImage != null
                         ? color.withAlpha(102)
@@ -619,7 +619,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
               GestureDetector(
                 onTap: _addTag,
                 child: Container(width: 48, height: 48,
-                  decoration: BoxDecoration(color: AppTheme.primaryColor, borderRadius: BorderRadius.circular(14)),
+                  decoration: BoxDecoration(color: AppTheme.primaryColor, borderRadius: BorderRadius.circular(24)),
                   child: const Icon(Icons.add_rounded, color: Colors.white),
                 ),
               ),
@@ -629,7 +629,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
             const SizedBox(height: 40),
             SizedBox(width: double.infinity, height: 56, child: ElevatedButton(
               onPressed: _addItem,
-              style: ElevatedButton.styleFrom(backgroundColor: color),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              ),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Icon(widget.editItem == null ? Icons.add_rounded : Icons.save_rounded, size: 24), const SizedBox(width: 8),
                 Text(widget.editItem == null ? 'Add Item' : 'Save Changes', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
@@ -647,7 +650,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   Widget _qtyBtn(IconData icon, Color color, VoidCallback onTap) => GestureDetector(
     onTap: onTap,
     child: Container(width: 48, height: 48,
-      decoration: BoxDecoration(color: color.withAlpha(26), borderRadius: BorderRadius.circular(14), border: Border.all(color: color.withAlpha(51))),
+      decoration: BoxDecoration(color: color.withAlpha(26), borderRadius: BorderRadius.circular(24), border: Border.all(color: color.withAlpha(51))),
       child: Icon(icon, color: color),
     ),
   );

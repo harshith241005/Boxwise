@@ -960,23 +960,32 @@ class InventoryProvider extends ChangeNotifier {
     required String from,
     required String to,
     required List<BoxModel> selectedBoxes,
+    String? notes,
   }) async {
     final newTravel = TravelModel(
       id: _uuid.v4(),
-      name: name,
+      tripName: name,
       fromLocation: from,
       toLocation: to,
-      timestamp: DateTime.now(),
-      itemStatuses: selectedBoxes.map((b) => TravelItemStatus(
-        boxId: b.id,
-        boxName: b.name ?? 'Unnamed Box',
-        location: b.location ?? '',
+      startTime: DateTime.now(),
+      status: 'active',
+      notes: notes,
+      itemStatuses: selectedBoxes.map((box) => TravelItemStatus(
+        boxId: box.id,
+        boxName: box.name ?? 'Unnamed Box',
+        location: box.location ?? 'Unknown',
+        status: TravelStatus.pending,
+        itemStatuses: box.items.map((item) => 
+          TravelItemDetail(id: item.id, name: item.name ?? 'Unnamed', status: TravelStatus.pending)
+        ).toList(),
       )).toList(),
     );
 
     _activeTravel = newTravel;
     _travelLogs.insert(0, newTravel);
     await DatabaseService.addTravelLog(newTravel);
+    
+    // We are NOT adding these boxes to DatabaseService.addBox because they are temporary for the trip.
     
     logActivity(
       'travel_started',
@@ -996,31 +1005,48 @@ class InventoryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateTravelItemStatus(String travelId, String boxId, String itemId, TravelStatus status) async {
+    final travelIndex = _travelLogs.indexWhere((t) => t.id == travelId);
+    if (travelIndex == -1) return;
+    
+    final itemStatus = _travelLogs[travelIndex].itemStatuses.firstWhere((isSet) => isSet.boxId == boxId);
+    final detailIndex = itemStatus.itemStatuses.indexWhere((i) => i.id == itemId);
+    if (detailIndex != -1) {
+        itemStatus.itemStatuses[detailIndex].status = status;
+        await DatabaseService.updateTravelLog(_travelLogs[travelIndex]);
+        notifyListeners();
+    }
+  }
+
   Future<void> endTravel(String travelId) async {
     final travelIndex = _travelLogs.indexWhere((t) => t.id == travelId);
     if (travelIndex == -1) return;
     
     final travel = _travelLogs[travelIndex];
-    travel.isCompleted = true;
+    final updatedTravel = TravelModel(
+      id: travel.id,
+      tripName: travel.tripName,
+      fromLocation: travel.fromLocation,
+      toLocation: travel.toLocation,
+      startTime: travel.startTime,
+      endTime: DateTime.now(),
+      status: 'completed',
+      itemStatuses: travel.itemStatuses,
+      notes: travel.notes,
+    );
+    _travelLogs[travelIndex] = updatedTravel;
     
-    // Update box locations upon arrival
-    for (var itemStatus in travel.itemStatuses) {
-      if (itemStatus.status == TravelStatus.unloaded) {
-        final boxIdx = _boxes.indexWhere((b) => b.id == itemStatus.boxId);
-        if (boxIdx != -1) {
-          _boxes[boxIdx].location = travel.toLocation;
-          await DatabaseService.updateBox(_boxes[boxIdx]);
-        }
-      }
-    }
+    // TEMPORARY BOXES ONLY: We deliberately do NOT update _boxes locations 
+    // because these boxes and items were created dynamically just for this trip 
+    // and aren't in the main static inventory list.
 
-    await DatabaseService.updateTravelLog(travel);
+    await DatabaseService.updateTravelLog(updatedTravel);
     if (_activeTravel?.id == travelId) _activeTravel = null;
     
     logActivity(
       'travel_completed',
-      'Travel Completed: ${travel.name}',
-      '${travel.fromLocation} → ${travel.toLocation}',
+      'Travel Completed: ${updatedTravel.tripName}',
+      '${updatedTravel.fromLocation} → ${updatedTravel.toLocation}',
     );
     notifyListeners();
   }

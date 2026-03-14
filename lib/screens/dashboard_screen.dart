@@ -54,12 +54,10 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex == 0 ? 0 : (_currentIndex == 1 ? 1 : (_currentIndex == 2 ? 2 : (_currentIndex == 3 ? 0 : (_currentIndex == 4 ? 3 : 4)))),
+        index: _currentIndex,
         children: const [
           _HomeTab(),
           BoxesScreen(),
-          SearchScreen(),
-          TravelScreen(),
           SettingsScreen(),
         ],
       ),
@@ -184,11 +182,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
             selectedIndex: _currentIndex,
             onDestinationSelected: (index) {
-              if (index == 3) {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen()));
-              } else {
-                setState(() => _currentIndex = index);
-              }
+              setState(() => _currentIndex = index);
             },
             destinations: [
               NavigationDestination(
@@ -198,25 +192,6 @@ class _DashboardScreenState extends State<DashboardScreen>
               NavigationDestination(
                 icon: const Icon(Icons.grid_view_rounded),
                 label: provider.translate('Boxes'),
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.search_rounded),
-                label: provider.translate('Search'),
-              ),
-              NavigationDestination(
-                icon: Container(
-                  padding: const EdgeInsets.all(6), 
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.qr_code_scanner_rounded, size: 22, color: Colors.white),
-                ),
-                label: provider.translate('Scan'),
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.local_shipping_rounded),
-                label: provider.translate('Travel'),
               ),
               NavigationDestination(
                 icon: const Icon(Icons.settings_rounded),
@@ -449,6 +424,21 @@ class _HomeTab extends StatelessWidget {
               title: const Text('Boxvise', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
               actions: [
                 Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withAlpha(20),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: IconButton(
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen())),
+                        icon: const Icon(Icons.qr_code_scanner_rounded, size: 24, color: AppTheme.primaryColor),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: Center(
                     child: Container(
@@ -566,26 +556,17 @@ class _HomeTab extends StatelessWidget {
                     const Text('Quick Hub', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
                     const SizedBox(height: 16),
                     GridView.count(
-                      crossAxisCount: 2,
+                      crossAxisCount: 3,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
-                      childAspectRatio: 2.3,
+                      childAspectRatio: 1.0, // perfect squares
                       children: [
-                        _buildactionTile(context, 'Create Box', Icons.inventory_2_rounded, AppTheme.primaryColor, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
-                        }),
-                        _buildactionTile(context, 'Travel Box', Icons.local_shipping_rounded, Colors.indigo, () {
+                        _buildactionTile(context, 'Travel', Icons.local_shipping_rounded, Colors.indigo, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const TravelScreen()));
                         }),
-                        _buildactionTile(context, 'Add Item', Icons.checklist_rounded, AppTheme.accentColor, () {
-                          _showAddItemListDialog(context, provider);
-                        }),
-                        _buildactionTile(context, 'Scan QR', Icons.qr_code_scanner_rounded, Colors.teal, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen()));
-                        }),
-                        _buildactionTile(context, 'Shop List', Icons.shopping_cart_rounded, Colors.orange, () {
+                        _buildactionTile(context, 'Shopping', Icons.shopping_cart_rounded, Colors.orange, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingListScreen()));
                         }),
                         _buildactionTile(context, 'Planner', Icons.task_alt_rounded, Colors.blue, () {
@@ -704,11 +685,12 @@ class _HomeTab extends StatelessWidget {
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E293B) : Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: color.withAlpha(40), width: 1.5),
+          border: Border.all(color: color.withAlpha(isDark ? 15 : 30), width: 1),
           boxShadow: [
             BoxShadow(
-              color: color.withAlpha(isDark ? 30 : 20),
-              blurRadius: 15,
+              color: color.withAlpha(isDark ? 10 : 15),
+              blurRadius: 24,
+              spreadRadius: 2,
               offset: const Offset(0, 8),
             ),
           ],
@@ -718,12 +700,12 @@ class _HomeTab extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withAlpha(26),
-                borderRadius: BorderRadius.circular(12),
+                color: color.withAlpha(20),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon, color: color, size: 22),
+              child: Icon(icon, color: color, size: 24),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -753,17 +735,18 @@ class _HomeTab extends StatelessWidget {
     return Material(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         child: Container(
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: isDark ? Colors.white.withAlpha(10) : color.withAlpha(20)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha(isDark ? 40 : 10),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: color.withAlpha(isDark ? 5 : 12),
+                blurRadius: 16,
+                spreadRadius: 1,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -771,12 +754,12 @@ class _HomeTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withAlpha(20),
+                  color: color.withAlpha(15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Icon(icon, color: color, size: 22),
               ),
               const SizedBox(width: 10),
               Flexible(

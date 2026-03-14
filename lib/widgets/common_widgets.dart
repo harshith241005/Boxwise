@@ -19,7 +19,7 @@ class GlassCard extends StatelessWidget {
     this.onTap,
     this.borderColor,
     this.color,
-    this.borderRadius = 20,
+    this.borderRadius = 24,
   });
 
   @override
@@ -91,7 +91,7 @@ class StatCard extends StatelessWidget {
               color.withAlpha(isDark ? 26 : 13),
             ],
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: color.withAlpha(51),
             width: 1,
@@ -381,7 +381,7 @@ class SearchBarWidget extends StatelessWidget {
         color: isDark
             ? Colors.white.withAlpha(13)
             : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark
               ? Colors.white.withAlpha(20)
@@ -526,7 +526,7 @@ class SkeletonLoader extends StatefulWidget {
     super.key,
     this.width = double.infinity,
     this.height = 20,
-    this.borderRadius = 12,
+    this.borderRadius = 24,
   });
 
   @override
@@ -598,7 +598,7 @@ class SkeletonBoxCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withAlpha(13) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark ? Colors.white.withAlpha(20) : Colors.black.withAlpha(13),
         ),
