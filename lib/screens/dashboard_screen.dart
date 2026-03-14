@@ -719,6 +719,7 @@ class _HomeTab extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
