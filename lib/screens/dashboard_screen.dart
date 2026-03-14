@@ -438,26 +438,7 @@ class _HomeTab extends StatelessWidget {
               toolbarHeight: 70,
               title: const Text('Boxvise', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
               actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Center(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withAlpha(20),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        onPressed: () {
-                          final state = context.findAncestorStateOfType<_DashboardScreenState>();
-                          if (state != null) {
-                            state.setState(() => state._currentIndex = 1);
-                          }
-                        },
-                        icon: const Icon(Icons.search_rounded, size: 24, color: AppTheme.primaryColor),
-                      ),
-                    ),
-                  ),
-                ),
+
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: Center(
@@ -535,8 +516,8 @@ class _HomeTab extends StatelessWidget {
 
                     _sectionHeader(
                       context, 
-                      'Inventory Overview', 
-                      trailing: 'View More',
+                      'Insights', 
+                      trailing: '›',
                       onTrailingTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsScreen())),
                     ),
                     const SizedBox(height: 12),
@@ -642,7 +623,7 @@ class _HomeTab extends StatelessWidget {
                     (context, index) {
                       final box = provider.boxes[index];
                       return Hero(
-                        tag: 'home_box_${box.id}',
+                        tag: 'box_${box.id}',
                         child: BoxCard(
                           name: box.name?.toString() ?? 'Unnamed Box',
                           location: box.location?.toString() ?? 'Unknown',

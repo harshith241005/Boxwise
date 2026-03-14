@@ -76,7 +76,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                    _buildSectionHeader('PROFILE'),
                    _buildSectionCard([
                     _buildSettingTile(
-                      title: 'User Profile',
+                      title: 'Profile',
                       subtitle: '',
                       icon: Icons.person_rounded,
                       iconColor: AppTheme.primaryColor,

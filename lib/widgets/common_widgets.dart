@@ -446,11 +446,15 @@ class SearchBarWidget extends StatelessWidget {
   }
 }
 
+import 'package:lottie/lottie.dart';
+
 class EmptyStateWidget extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final Widget? action;
+  final String? lottieUrl;
+  final double lottieHeight;
 
   const EmptyStateWidget({
     super.key,
@@ -458,6 +462,8 @@ class EmptyStateWidget extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.action,
+    this.lottieUrl,
+    this.lottieHeight = 180,
   });
 
   @override
@@ -470,27 +476,22 @@ class EmptyStateWidget extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withAlpha(26),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                size: 48,
-                color: AppTheme.primaryColor.withAlpha(128),
-              ),
-            ),
+            if (lottieUrl != null)
+              Lottie.network(
+                lottieUrl!,
+                height: lottieHeight,
+                repeat: true,
+                errorBuilder: (context, error, stackTrace) => _buildIcon(isDark),
+              )
+            else
+              _buildIcon(isDark),
             const SizedBox(height: 24),
             Text(
               title,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: isDark
-                    ? Colors.white
-                    : const Color(0xFF1A1A2E),
+                color: isDark ? Colors.white : const Color(0xFF1A1A2E),
               ),
               textAlign: TextAlign.center,
             ),
@@ -499,9 +500,7 @@ class EmptyStateWidget extends StatelessWidget {
               subtitle,
               style: TextStyle(
                 fontSize: 14,
-                color: isDark
-                    ? Colors.white.withAlpha(128)
-                    : Colors.black.withAlpha(128),
+                color: isDark ? Colors.white.withAlpha(128) : Colors.black.withAlpha(128),
               ),
               textAlign: TextAlign.center,
             ),
@@ -511,6 +510,21 @@ class EmptyStateWidget extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildIcon(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withAlpha(26),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        icon,
+        size: 48,
+        color: AppTheme.primaryColor.withAlpha(128),
       ),
     );
   }

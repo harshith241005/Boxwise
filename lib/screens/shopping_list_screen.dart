@@ -30,6 +30,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
         title: const Text('Shopping List', style: TextStyle(fontWeight: FontWeight.w900)),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         actions: [
           if (manualItems.isNotEmpty)
             IconButton(
@@ -130,6 +131,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
         icon: Icons.shopping_basket_outlined,
         title: 'Your list is empty',
         subtitle: 'Add items manually or let low-stock alerts fill this up.',
+        lottieUrl: 'https://assets5.lottiefiles.com/packages/lf20_m6cuL6.json',
       ),
     );
   }
@@ -308,7 +310,7 @@ class _AddItemsSheet extends StatefulWidget {
 }
 
 class _AddItemsSheetState extends State<_AddItemsSheet> {
-  final _customController = TextEditingController();
+
   String _mode = 'main'; // main, boxes, items
   BoxModel? _selectedBox;
 
@@ -345,37 +347,7 @@ class _AddItemsSheetState extends State<_AddItemsSheet> {
         const SizedBox(height: 24),
         _optionTile(Icons.inventory_2_rounded, 'Add a Box', 'Add an entire box to shop for', () => setState(() => _mode = 'boxes')),
         _optionTile(Icons.category_rounded, 'Add specific Item', 'Pick an individual item from any box', () => setState(() => _mode = 'boxes')),
-        _divider(),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _customController,
-                  decoration: InputDecoration(
-                    hintText: 'Add custom item (e.g. Tape)',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                    filled: true,
-                    fillColor: Colors.grey.withAlpha(20),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              IconButton.filled(
-                onPressed: () {
-                  if (_customController.text.isNotEmpty) {
-                    widget.provider.addCustomToShoppingList(_customController.text);
-                    Navigator.pop(context);
-                  }
-                },
-                icon: const Icon(Icons.add_rounded),
-                style: IconButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white),
-              ),
-            ],
-          ),
-        ),
+
       ],
     );
   }
@@ -428,7 +400,7 @@ class _AddItemsSheetState extends State<_AddItemsSheet> {
                     final item = _selectedBox!.items[index];
                     return ListTile(
                       leading: const Icon(Icons.category_rounded),
-                      title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(item.name ?? 'Unnamed Item', style: const TextStyle(fontWeight: FontWeight.bold)),
                       trailing: const Icon(Icons.add_rounded, color: AppTheme.primaryColor),
                       onTap: () {
                         widget.provider.addToShoppingList(_selectedBox!, item);
@@ -468,6 +440,4 @@ class _AddItemsSheetState extends State<_AddItemsSheet> {
       onTap: onTap,
     );
   }
-
-  Widget _divider() => Divider(indent: 24, endIndent: 24, height: 32, color: Colors.grey.withAlpha(50));
 }

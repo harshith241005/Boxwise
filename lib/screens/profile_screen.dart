@@ -18,6 +18,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _cityController = TextEditingController();
   final _bioController = TextEditingController();
   bool _isSaving = false;
+  bool _isEditing = false; // Toggle for Edit Mode
 
   @override
   void initState() {
@@ -57,11 +58,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await DatabaseService.setSetting('profile_bio', _bioController.text.trim());
 
     if (!mounted) return;
-    setState(() => _isSaving = false);
+    setState(() {
+      _isSaving = false;
+      _isEditing = false;
+    });
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Saved'),
+      content: Text('Profile updated successfully'),
       behavior: SnackBarBehavior.floating,
-      duration: Duration(seconds: 1),
+      duration: Duration(seconds: 2),
     ));
   }
 
@@ -86,6 +90,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.w900)),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: () => setState(() => _isEditing = !_isEditing),
+            icon: Icon(_isEditing ? Icons.close_rounded : Icons.edit_rounded),
+            tooltip: _isEditing ? 'Cancel Editing' : 'Edit Profile',
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 60),
@@ -114,19 +126,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         child: const Icon(Icons.person_rounded, size: 48, color: AppTheme.primaryColor),
                       ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: bg, width: 2),
+                      if (_isEditing)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: bg, width: 2),
+                            ),
+                            child: const Icon(Icons.camera_alt_rounded, size: 14, color: Colors.white),
                           ),
-                          child: const Icon(Icons.camera_alt_rounded, size: 14, color: Colors.white),
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -188,22 +201,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 32),
 
             // ── Save ──
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _saveProfile,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            if (_isEditing)
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: _isSaving ? null : _saveProfile,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: _isSaving
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Save Changes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                 ),
-                child: _isSaving
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Save', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
               ),
-            ),
           ],
         ),
       ),
@@ -234,8 +248,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       child: TextField(
         controller: controller,
+        enabled: _isEditing,
         maxLines: maxLines,
-        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          fontSize: 15, 
+          fontWeight: FontWeight.w600,
+          color: !_isEditing && !isDark ? Colors.black54 : null,
+        ),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(fontSize: 13, color: isDark ? Colors.white38 : Colors.black38, fontWeight: FontWeight.w500),

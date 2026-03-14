@@ -10,44 +10,22 @@ class PlannerScreen extends StatefulWidget {
   State<PlannerScreen> createState() => _PlannerScreenState();
 }
 
-class _PlannerScreenState extends State<PlannerScreen> {
+class _PlannerScreenState extends State<PlannerScreen> with SingleTickerProviderStateMixin {
   final TextEditingController _taskController = TextEditingController();
   DateTime? _selectedDueDate;
-  String _filter = 'open';
+  late TabController _tabController;
 
-  Widget _buildIntelligenceFeature(IconData icon, String title, String desc) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white70, size: 18),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                Text(desc, style: const TextStyle(color: Colors.white70, fontSize: 11)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
     _taskController.dispose();
+    _tabController.dispose();
     super.dispose();
-  }
-
-  List<Map<String, dynamic>> _applyFilter(List<Map<String, dynamic>> tasks) {
-    if (_filter == 'all') return tasks;
-    if (_filter == 'completed') {
-      return tasks.where((task) => task['isCompleted'] == true).toList();
-    }
-    return tasks.where((task) => task['isCompleted'] != true).toList();
   }
 
   Future<void> _addTask(InventoryProvider provider) async {
@@ -56,7 +34,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
     await provider.addPlannerTask(
       title: title,
-      subtitle: 'Custom task',
+      subtitle: 'Manual Task',
       dueDate: _selectedDueDate,
     );
 
@@ -65,268 +43,329 @@ class _PlannerScreenState extends State<PlannerScreen> {
       _taskController.clear();
       _selectedDueDate = null;
     });
-  }
-
-  Color _typeColor(String type) {
-    switch (type) {
-      case 'restock':
-        return Colors.orange;
-      case 'expiry':
-        return Colors.redAccent;
-      case 'lending':
-        return Colors.indigo;
-      default:
-        return AppTheme.primaryColor;
-    }
-  }
-
-  String _prettyType(String type) {
-    switch (type) {
-      case 'restock':
-        return 'Restock';
-      case 'expiry':
-        return 'Expiry';
-      case 'lending':
-        return 'Lending';
-      default:
-        return 'Custom';
-    }
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final provider = context.watch<InventoryProvider>();
+    final pendingTasks = provider.plannerTasks.where((t) => t['isCompleted'] != true).toList();
+    final completedTasks = provider.plannerTasks.where((t) => t['isCompleted'] == true).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Smart Planner', style: TextStyle(fontWeight: FontWeight.w900)),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh smart tasks',
-            icon: const Icon(Icons.auto_awesome_rounded),
-            onPressed: () => context.read<InventoryProvider>().generateSmartPlannerTasks(),
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 140,
+            pinned: true,
+            stretch: true,
+            backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+            elevation: 0,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+              title: const Text('Intelligence', 
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppTheme.primaryColor.withAlpha(20), Colors.transparent],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+            ),
+            actions: [
+              IconButton(
+                onPressed: () => provider.generateSmartPlannerTasks(),
+                icon: const Icon(Icons.auto_awesome_rounded),
+                tooltip: 'Refresh Intelligence',
+              ),
+              const SizedBox(width: 8),
+            ],
+          ),
+
+          // ── Intelligence Hub Carousel ──
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 200,
+              child: PageView(
+                controller: PageController(viewportFraction: 0.9),
+                children: [
+                   _hubCard(
+                    'Restock Assistant',
+                    'Automatically detects items with low stock.',
+                    Icons.inventory_2_rounded,
+                    Colors.orange,
+                    '${provider.lowStockItems.length} items to shop',
+                  ),
+                  _hubCard(
+                    'Expiry Monitor',
+                    'Tracking perishables and expiring boxes.',
+                    Icons.history_toggle_off_rounded,
+                    Colors.redAccent,
+                    '${provider.expiringItems.length} items expiring',
+                  ),
+                  _hubCard(
+                    'Lending Radar',
+                    'Keeping track of everything you lent.',
+                    Icons.handshake_rounded,
+                    Colors.indigo,
+                    'Check lending history',
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Tab Bar Section ──
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _SliverAppBarDelegate(
+              TabBar(
+                controller: _tabController,
+                isScrollable: false,
+                indicatorWeight: 4,
+                indicatorSize: TabBarIndicatorSize.label,
+                indicatorColor: AppTheme.primaryColor,
+                labelColor: AppTheme.primaryColor,
+                unselectedLabelColor: Colors.grey,
+                labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5),
+                tabs: [
+                  Tab(text: 'ONGOING (${pendingTasks.length})'),
+                  Tab(text: 'COMPLETED (${completedTasks.length})'),
+                ],
+              ),
+              isDark ? const Color(0xFF0F172A) : Colors.white,
+            ),
+          ),
+
+          // ── Task List ──
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+            sliver: SliverFillRemaining(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildTaskList(pendingTasks, provider, isDark),
+                  _buildTaskList(completedTasks, provider, isDark),
+                ],
+              ),
+            ),
           ),
         ],
       ),
-      body: Consumer<InventoryProvider>(
-        builder: (context, provider, _) {
-          final tasks = _applyFilter(provider.plannerTasks);
-          final completedCount = provider.plannerTasks.where((task) => task['isCompleted'] == true).length;
-
-          return RefreshIndicator(
-            onRefresh: provider.generateSmartPlannerTasks,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppTheme.primaryColor, AppTheme.primaryColor.withAlpha(200)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(color: Colors.white.withAlpha(51), borderRadius: BorderRadius.circular(12)),
-                            child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 24),
-                          ),
-                          const SizedBox(width: 16),
-                          const Text('Intelligence Hub', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _buildIntelligenceFeature(Icons.inventory_rounded, 'Auto-Restock', 'Detects low items and suggests shopping.'),
-                      _buildIntelligenceFeature(Icons.timer_rounded, 'Expiry Tracker', 'Alerts you before perishable items expire.'),
-                      _buildIntelligenceFeature(Icons.handshake_rounded, 'Lending Monitor', 'Tracks items borrowed by friends/family.'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Today\'s Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${provider.plannerTasks.length - completedCount} pending tasks',
-                        style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
-                      ),
-                      const SizedBox(height: 14),
-                      TextField(
-                        controller: _taskController,
-                        decoration: InputDecoration(
-                          hintText: 'Quick add a manual task...',
-                          prefixIcon: const Icon(Icons.add_task_rounded),
-                          suffixIcon: IconButton(
-                            onPressed: () async {
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: _selectedDueDate ?? DateTime.now(),
-                                firstDate: DateTime.now().subtract(const Duration(days: 1)),
-                                lastDate: DateTime.now().add(const Duration(days: 3650)),
-                              );
-                              if (picked != null && mounted) {
-                                setState(() => _selectedDueDate = picked);
-                              }
-                            },
-                            icon: const Icon(Icons.calendar_month_rounded),
-                          ),
-                        ),
-                        onSubmitted: (_) => _addTask(provider),
-                      ),
-                      if (_selectedDueDate != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          'Due: ${_selectedDueDate!.day}/${_selectedDueDate!.month}/${_selectedDueDate!.year}',
-                          style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.black54),
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _addTask(provider),
-                          icon: const Icon(Icons.add_rounded),
-                          label: const Text('Create Task'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    ChoiceChip(
-                      label: const Text('Open'),
-                      selected: _filter == 'open',
-                      onSelected: (_) => setState(() => _filter = 'open'),
-                    ),
-                    ChoiceChip(
-                      label: const Text('Completed'),
-                      selected: _filter == 'completed',
-                      onSelected: (_) => setState(() => _filter = 'completed'),
-                    ),
-                    ChoiceChip(
-                      label: const Text('All'),
-                      selected: _filter == 'all',
-                      onSelected: (_) => setState(() => _filter = 'all'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (tasks.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
-                    ),
-                    child: const Column(
-                      children: [
-                        Icon(Icons.task_alt_rounded, size: 42, color: AppTheme.primaryColor),
-                        SizedBox(height: 10),
-                        Text('No tasks in this filter', style: TextStyle(fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-                  )
-                else
-                  ...tasks.map((task) {
-                    final dueDate = DateTime.tryParse((task['dueDate'] ?? '').toString());
-                    final isCompleted = task['isCompleted'] == true;
-                    final type = (task['type'] ?? 'custom').toString();
-                    final color = _typeColor(type);
-
-                    return Dismissible(
-                      key: ValueKey(task['id']),
-                      direction: DismissDirection.endToStart,
-                      onDismissed: (_) => provider.removePlannerTask(task['id'].toString()),
-                      background: Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.redAccent.withAlpha(30),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 16),
-                        child: const Icon(Icons.delete_rounded, color: Colors.redAccent),
-                      ),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
-                        ),
-                        child: CheckboxListTile(
-                          value: isCompleted,
-                          onChanged: (value) => provider.togglePlannerTask(task['id'].toString(), value ?? false),
-                          title: Text(
-                            task['title']?.toString() ?? 'Task',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              decoration: isCompleted ? TextDecoration.lineThrough : null,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if ((task['subtitle'] ?? '').toString().isNotEmpty)
-                                Text(task['subtitle'].toString()),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: color.withAlpha(25),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      _prettyType(type),
-                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
-                                    ),
-                                  ),
-                                  if (dueDate != null) ...[
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Due ${dueDate.day}/${dueDate.month}/${dueDate.year}',
-                                      style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : Colors.black54),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ],
-                          ),
-                          controlAffinity: ListTileControlAffinity.leading,
-                        ),
-                      ),
-                    );
-                  }),
-                const SizedBox(height: 80),
-              ],
-            ),
-          );
-        },
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddTaskSheet(context, provider),
+        icon: const Icon(Icons.add_task_rounded),
+        label: const Text('New Action', style: TextStyle(fontWeight: FontWeight.w800)),
+        backgroundColor: AppTheme.primaryColor,
       ),
     );
   }
+
+  Widget _hubCard(String title, String desc, IconData icon, Color color, String footer) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: color.withAlpha(40)),
+        boxShadow: [
+          BoxShadow(color: color.withAlpha(isDark ? 5 : 10), blurRadius: 20, offset: const Offset(0, 10)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: color.withAlpha(20), shape: BoxShape.circle),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const Spacer(),
+              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 4),
+          Text(desc, style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38)),
+          const Spacer(),
+          Text(footer, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color, letterSpacing: 0.5)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaskList(List<Map<String, dynamic>> tasks, InventoryProvider provider, bool isDark) {
+    if (tasks.isEmpty) {
+      return EmptyStateWidget(
+        icon: Icons.assignment_turned_in_rounded,
+        title: 'All caught up!',
+        subtitle: 'No pending actions in the Intelligence Hub.',
+        lottieUrl: 'https://assets9.lottiefiles.com/packages/lf20_yupe9pda.json',
+      );
+    }
+
+    return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: tasks.length,
+      itemBuilder: (context, index) {
+        final task = tasks[index];
+        final type = task['type'] ?? 'custom';
+        final isCompleted = task['isCompleted'] == true;
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withAlpha(5) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5)),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            onTap: () => provider.togglePlannerTask(task['id'].toString(), !isCompleted),
+            leading: IconButton(
+              icon: Icon(
+                isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                color: isCompleted ? AppTheme.primaryColor : Colors.grey,
+                size: 28,
+              ),
+              onPressed: () => provider.togglePlannerTask(task['id'].toString(), !isCompleted),
+            ),
+            title: Text(
+              task['title'] ?? 'Action',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                decoration: isCompleted ? TextDecoration.lineThrough : null,
+                color: isCompleted ? Colors.grey : null,
+              ),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Row(
+                children: [
+                  _typeTag(type),
+                  if (task['dueDate'] != null) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                       DateFormat('MMM d').format(DateTime.parse(task['dueDate'].toString())),
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.grey),
+              onPressed: () => provider.removePlannerTask(task['id'].toString()),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _typeTag(String type) {
+    Color color;
+    String label;
+    switch (type) {
+      case 'restock': color = Colors.orange; label = 'SHOP'; break;
+      case 'expiry': color = Colors.redAccent; label = 'EXPIRY'; break;
+      case 'lending': color = Colors.indigo; label = 'LENT'; break;
+      default: color = AppTheme.primaryColor; label = 'ACTION';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: color.withAlpha(20), borderRadius: BorderRadius.circular(6)),
+      child: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: color)),
+    );
+  }
+
+  void _showAddTaskSheet(BuildContext context, InventoryProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Add Action', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _taskController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'What needs to be done?',
+                  prefixIcon: Icon(Icons.edit_rounded),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.calendar_month_rounded, color: AppTheme.primaryColor),
+                title: Text(_selectedDueDate == null ? 'Set Due Date' : DateFormat('EEE, MMM d, yyyy').format(_selectedDueDate!)),
+                trailing: _selectedDueDate != null 
+                  ? IconButton(icon: const Icon(Icons.close), onPressed: () => setSheetState(() => _selectedDueDate = null))
+                  : const Icon(Icons.chevron_right_rounded),
+                onTap: () async {
+                  final p = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (p != null) setSheetState(() => _selectedDueDate = p);
+                },
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: () => _addTask(provider),
+                  child: const Text('Add to Planner', style: TextStyle(fontWeight: FontWeight.w800)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  _SliverAppBarDelegate(this._tabBar, this.backgroundColor);
+  final TabBar _tabBar;
+  final Color backgroundColor;
+  @override
+  double get minExtent => _tabBar.preferredSize.height;
+  @override
+  double get maxExtent => _tabBar.preferredSize.height;
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(color: backgroundColor, child: _tabBar);
+  }
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) => false;
+}
 
 }
