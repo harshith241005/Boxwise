@@ -97,7 +97,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             elevation: 0,
             flexibleSpace: FlexibleSpaceBar(
               stretchModes: const [StretchMode.zoomBackground],
-              background: _buildProfileHeader(context, provider),
+               background: _buildProfileHeader(context, provider),
             ),
           ),
           SliverToBoxAdapter(
@@ -121,10 +121,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                      _buildEditableField('Biography', _bioController, Icons.description_rounded, maxLines: 3),
                    ]),
                    
-                     _buildEditableField('Biography', _bioController, Icons.description_rounded, maxLines: 3),
-                   ]),
-
-
                    const SizedBox(height: 40),
                    SizedBox(
                      width: double.infinity,
