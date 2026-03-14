@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import '../theme/app_theme.dart';
 
 class GlassCard extends StatelessWidget {
@@ -445,8 +446,6 @@ class SearchBarWidget extends StatelessWidget {
     );
   }
 }
-
-import 'package:lottie/lottie.dart';
 
 class EmptyStateWidget extends StatelessWidget {
   final IconData icon;

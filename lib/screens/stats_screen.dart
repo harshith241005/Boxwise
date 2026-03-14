@@ -38,7 +38,7 @@ class _StatsScreenState extends State<StatsScreen> {
 
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: SliverList(
+            sliver: SliverList(
               delegate: SliverChildListDelegate([
                 const SizedBox(height: 8),
                 _buildScoreCard(provider, isDark, bg),
@@ -299,7 +299,7 @@ class _StatsScreenState extends State<StatsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(box.name ?? 'Unnamed', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-                Text(box.location ?? 'No Location', style: TextStyle(fontSize: 11, color: isDark ? Colors.white30 : Colors.black30)),
+                Text(box.location ?? 'No Location', style: TextStyle(fontSize: 11, color: isDark ? Colors.white30 : Colors.black38)),
               ],
             ),
           ),
@@ -319,5 +319,4 @@ class _StatsScreenState extends State<StatsScreen> {
       default: return AppTheme.primaryColor;
     }
   }
-}
 }

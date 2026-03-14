@@ -17,8 +17,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 class BoxDetailsScreen extends StatefulWidget {
   final BoxModel box;
+  final String? heroTag;
 
-  const BoxDetailsScreen({super.key, required this.box});
+  const BoxDetailsScreen({super.key, required this.box, this.heroTag});
 
   @override
   State<BoxDetailsScreen> createState() => _BoxDetailsScreenState();
@@ -61,7 +62,7 @@ class _BoxDetailsScreenState extends State<BoxDetailsScreen> {
                 pinned: true,
                 flexibleSpace: FlexibleSpaceBar(
                   background: Hero(
-                    tag: 'box_${box.id}',
+                    tag: widget.heroTag ?? 'box_${box.id}',
                     child: Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(

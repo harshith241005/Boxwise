@@ -436,7 +436,28 @@ class _HomeTab extends StatelessWidget {
               floating: true,
               snap: true,
               toolbarHeight: 70,
-              title: const Text('Boxvise', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+              title: RichText(
+                text: TextSpan(
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1,
+                    fontFamily: 'Outfit', // Assuming Outfit is used as per planning
+                  ),
+                  children: [
+                    TextSpan(
+                      text: 'Box',
+                      style: TextStyle(color: AppTheme.primaryColor),
+                    ),
+                    TextSpan(
+                      text: 'vise',
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               actions: [
 
                 Padding(
@@ -486,7 +507,7 @@ class _HomeTab extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${_getGreeting()} 👋',
+                      'Welcome back 👋',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
@@ -622,8 +643,10 @@ class _HomeTab extends StatelessWidget {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final box = provider.boxes[index];
+                      // Use a composite tag to avoid collisions if duplicate IDs exist in mock data
+                      final heroTag = 'box_${box.id}_$index';
                       return Hero(
-                        tag: 'box_${box.id}',
+                        tag: heroTag,
                         child: BoxCard(
                           name: box.name?.toString() ?? 'Unnamed Box',
                           location: box.location?.toString() ?? 'Unknown',
@@ -636,7 +659,7 @@ class _HomeTab extends StatelessWidget {
                               provider.toggleBoxSelection(box.id);
                             } else {
                               provider.accessBox(box);
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: box)));
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: box, heroTag: heroTag)));
                             }
                           },
                           onQrTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => QrCodeScreen(box: box))),

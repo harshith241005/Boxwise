@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/inventory_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/common_widgets.dart';
 
 class PlannerScreen extends StatefulWidget {
   const PlannerScreen({super.key});
@@ -183,18 +185,6 @@ class _PlannerScreenState extends State<PlannerScreen> with SingleTickerProvider
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: color.withAlpha(20), shape: BoxShape.circle),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const Spacer(),
-              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
-            ],
-          ),
-          const SizedBox(height: 20),
           Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
           const SizedBox(height: 4),
           Text(desc, style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38)),
@@ -366,6 +356,4 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   }
   @override
   bool shouldRebuild(_SliverAppBarDelegate oldDelegate) => false;
-}
-
 }

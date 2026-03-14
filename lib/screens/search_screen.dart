@@ -85,17 +85,7 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  void _toggleLocation(String loc) {
-    setState(() {
-      if (_selectedLocations.contains(loc)) {
-        _selectedLocations.remove(loc);
-      } else {
-        _selectedLocations.clear();
-        _selectedLocations.add(loc);
-      }
-      _performSearch();
-    });
-  }
+
 
   void _listen() async {
     if (!_isListening) {
@@ -170,42 +160,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
         
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('LOCATIONS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? Colors.white38 : Colors.black38, letterSpacing: 1.2)),
-                    _buildLocationDropdown(provider, isDark),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 36,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      _buildQuickChip('All', _selectedLocations.isEmpty, () => setState(() => _selectedLocations.clear())),
-                      ...provider.allLocations.map((loc) => _buildQuickChip(
-                        loc, 
-                        _selectedLocations.contains(loc), 
-                        () => setState(() {
-                          _selectedLocations.clear();
-                          _selectedLocations.add(loc);
-                          _performSearch();
-                        })
-                      )),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+
 
         if (!isSearching && _searchCtrl.text.isEmpty)
           SliverFillRemaining(
@@ -330,31 +285,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildLocationDropdown(InventoryProvider provider, bool isDark) {
-    return PopupMenuButton<String>(
-      onSelected: (loc) {
-        setState(() {
-          if (loc == 'ALL') {
-            _selectedLocations.clear();
-          } else {
-            _selectedLocations.clear();
-            _selectedLocations.add(loc);
-          }
-          _performSearch();
-        });
-      },
-      itemBuilder: (ctx) => [
-        const PopupMenuItem(value: 'ALL', child: Text('All Locations')),
-        ...provider.allLocations.map((loc) => PopupMenuItem(value: loc, child: Text(loc))),
-      ],
-      child: Row(
-        children: [
-          Text(_selectedLocations.isEmpty ? 'All' : _selectedLocations.first, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-          const Icon(Icons.arrow_drop_down, color: AppTheme.primaryColor),
-        ],
-      ),
-    );
-  }
+
 
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
@@ -492,7 +423,6 @@ class _FilterModalState extends State<_FilterModal> {
                     children: [
                       _buildCategoryItem('Box', Icons.inventory_2_rounded),
                       _buildCategoryItem('Tags', Icons.sell_rounded),
-                      _buildCategoryItem('Location', Icons.location_on_rounded),
                       _buildCategoryItem('Quantity', Icons.analytics_rounded),
                       _buildCategoryItem('Timeline', Icons.event_note_rounded),
                       _buildCategoryItem('Sort By', Icons.sort_rounded),
@@ -615,27 +545,7 @@ class _FilterModalState extends State<_FilterModal> {
             ),
           ],
         );
-      case 'Location':
-        return Column(
-          children: [
-            _buildFilterRow('All Locations', _locations.isEmpty, () => setState(() => _locations.clear())),
-            Expanded(
-              child: ListView.builder(
-                itemCount: provider.allLocations.length,
-                itemBuilder: (ctx, i) {
-                  final loc = provider.allLocations[i];
-                  final isSel = _locations.contains(loc);
-                  return _buildFilterRow(loc, isSel, () {
-                    setState(() {
-                      _locations.clear(); // User preferred single location from dropdown logic
-                      _locations.add(loc);
-                    });
-                  });
-                },
-              ),
-            ),
-          ],
-        );
+
       case 'Quantity':
          return Column(
           children: [
