@@ -67,9 +67,6 @@ class _PlannerScreenState extends State<PlannerScreen> with SingleTickerProvider
             backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
             elevation: 0,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-              title: const Text('Intelligence', 
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -97,13 +94,6 @@ class _PlannerScreenState extends State<PlannerScreen> with SingleTickerProvider
               child: PageView(
                 controller: PageController(viewportFraction: 0.9),
                 children: [
-                   _hubCard(
-                    'Restock Assistant',
-                    'Automatically detects items with low stock.',
-                    Icons.inventory_2_rounded,
-                    Colors.orange,
-                    '${provider.lowStockItems.length} items to shop',
-                  ),
                   _hubCard(
                     'Expiry Monitor',
                     'Tracking perishables and expiring boxes.',
